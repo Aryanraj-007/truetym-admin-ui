@@ -1,0 +1,28 @@
+# Ignore artifacts:
+build/
+coverage/
+node_modules/
+
+# Ignore Next.js specific directories
+.next/
+out/
+
+# Ignore all HTML files:
+*.html
+
+# Ignore specific configuration files
+package-lock.json
+yarn.lock
+
+# Ignore miscellaneous files
+.DS_Store
+Thumbs.db
+
+# Ignore specific directories
+public/
+
+jest.config.ts
+tailwind.config.ts
+jest.setup.ts
+cypress.config.ts
+components/ui/**

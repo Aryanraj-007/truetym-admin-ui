@@ -1,0 +1,10 @@
+version: 2
+updates:
+  - package-ecosystem: "npm" # Change to your package manager (e.g., "pip", "maven", etc.)
+    directory: "/" # Location of package.json or equivalent
+    schedule:
+      interval: "monthly" # Options: "daily", "weekly", "monthly"
+      day: "sunday"
+      time: "09:00"
+      timezone: "Asia/Calcutta"
+    target-branch: "master" # This branch will be updated after every new feature branch

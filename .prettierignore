@@ -1,0 +1,42 @@
+# Ignore artifacts:
+build
+coverage
+node_modules
+
+# Ignore all HTML files:
+*.html
+
+# Ignore specific files in the root directory
+package-lock.json
+yarn.lock
+
+# Ignore specific directories
+public
+.next
+out
+
+# Ignore specific configuration files
+.eslintcache
+*.log
+
+# Ignore miscellaneous files
+.DS_Store
+Thumbs.db
+
+# Ignore Docker files
+Dockerfile
+docker-compose.yml
+
+# Other config files and folders
+.vscode
+.github
+# postcss.config.js
+# prettier.config.js
+# .eslintrc.json
+.babelrc
+jest.config.js
+jest.setup.js
+next.config.mjs
+package.json
+tailwind.config.js
+tsconfig.json
