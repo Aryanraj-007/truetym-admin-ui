@@ -1,24 +1,23 @@
 'use client';
 
-import React from 'react';
-import { useAppSelector } from '@/store/hooks';
+import Sidebar from '@/src/components/common/admin-panel/Sidebar';
+import Navbar from '@/src/components/common/admin-panel/Navbar';
 
-import { cn } from '@/lib/utils';
-import { Sidebar } from '@/components/common/admin-panel/Sidebar';
+interface AdminPanelProps {
+  children: React.ReactNode;
+}
 
-export default function AdminPanel({ children }: Readonly<{ children: React.ReactNode }>) {
-  const { isSidebarOpen } = useAppSelector((state) => state.app);
+export default function AdminPanel({ children }: AdminPanelProps) {
   return (
-    <>
+    <div className="flex min-h-screen bg-[#fcfcf9]">
       <Sidebar />
-      <main
-        className={cn(
-          'min-h-[calc(100vh_-_56px)] transition-[margin-left] duration-300 ease-in-out dark:bg-zinc-900',
-          !isSidebarOpen ? 'lg:ml-[90px]' : 'lg:ml-72',
-        )}
-      >
-        {children}
-      </main>
-    </>
+      <div className="flex-1 flex flex-col">
+        <Navbar />
+        <main className="flex-1 overflow-auto">
+          {children}
+        </main>
+      </div>
+    </div>
   );
 }
+

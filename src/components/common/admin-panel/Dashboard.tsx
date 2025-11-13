@@ -1,8 +1,5 @@
-
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   AreaChart, 
@@ -67,41 +64,6 @@ const quickStats = [
 ];
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Check authentication on mount
-  useEffect(() => {
-    const authToken = localStorage.getItem('authToken');
-    if (!authToken) {
-      router.push('/signup');
-    } else {
-      setIsAuthenticated(true);
-    }
-    setIsLoading(false);
-  }, [router]);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return null;
-  }
-
-  const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    router.push('/signup');
-  };
-
   const statCards = [
     {
       title: 'Total Customers',
@@ -163,18 +125,10 @@ export default function DashboardPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header with Logout */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold text-gray-900">Dashboard Overview</h1>
-          <p className="text-gray-500 mt-1">Welcome back! Here's what's happening with your business today.</p>
-        </div>
-        <button
-          onClick={handleLogout}
-          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
-        >
-          Logout
-        </button>
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-semibold text-gray-900">Dashboard Overview</h1>
+        <p className="text-gray-500 mt-1">Welcome back! Here's what's happening with your business today.</p>
       </div>
 
       {/* Stat Cards */}

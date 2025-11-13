@@ -1,9 +1,5 @@
-'use client';
+import AdminContentLayout from '@/components/common/admin-panel/AdminContentLayout';
 
-import React from 'react';
-
-import AdminPanel from '@/components/common/admin-panel/AdminPanel';
-
-export default function AdminPanelLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <AdminPanel>{children}</AdminPanel>;
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return <AdminContentLayout>{children}</AdminContentLayout>;
 }
