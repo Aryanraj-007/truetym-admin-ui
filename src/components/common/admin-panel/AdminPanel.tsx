@@ -1,7 +1,7 @@
 'use client';
 
-import Sidebar from '@/src/components/common/admin-panel/Sidebar';
-import Navbar from '@/src/components/common/admin-panel/Navbar';
+import Sidebar from './Sidebar';
+import Navbar from './Navbar';
 
 interface AdminPanelProps {
   children: React.ReactNode;
