@@ -11,17 +11,19 @@ import {
   FileText, 
   Package, 
   Headphones, 
-  TrendingUp, 
+  TrendingUp,
+  Sliders, 
   UsersRound, 
   Settings 
 } from 'lucide-react';
 
+
+
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
   { icon: Users, label: 'Customers', href: '/dashboard/customers' },
-  { icon: DollarSign, label: 'Feature Management', href: '/Feature' },
-
-  { icon: CreditCard, label: 'Plan Management', href: '/dashboard/Plan' },
+  { icon: Sliders, label: 'Feature Management', href: '/Feature' },
+  { icon: Package, label: 'Plan Management', href: '/dashboard/plan' }, // lowercase
   { icon: TrendingDown, label: 'Churn & Retention', href: '/dashboard/churn' },
   { icon: Megaphone, label: 'Marketing', href: '/dashboard/marketing' },
   { icon: FileText, label: 'Financials', href: '/dashboard/financials' },
