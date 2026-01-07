@@ -1,8 +1,6 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
+import { useEffect, useState } from 'react';
 
 export default function SignUpCarousel() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -14,7 +12,7 @@ export default function SignUpCarousel() {
       image: '/images/carousel-1.png',
     },
     {
-       title: 'Real-time Analytics',
+      title: 'Real-time Analytics',
       description: 'Data-driven insights for better decisions',
       image: '/images/carousel-2.png',
     },
@@ -39,40 +37,40 @@ export default function SignUpCarousel() {
   }, [slides.length]);
 
   return (
-    <div className="relative w-full h-full overflow-hidden">
+    <div className="relative h-full w-full overflow-hidden">
       {/* Slides */}
       {slides.map((slide, index) => (
         <div
           key={index}
           className={`absolute inset-0 transition-all duration-700 ease-in-out ${
             index === currentSlide
-              ? 'opacity-100 translate-x-0'
+              ? 'translate-x-0 opacity-100'
               : index < currentSlide
-              ? 'opacity-0 -translate-x-full'
-              : 'opacity-0 translate-x-full'
+                ? '-translate-x-full opacity-0'
+                : 'translate-x-full opacity-0'
           }`}
         >
           {/* Background Image */}
-          <div 
+          <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
               backgroundImage: `url('${slide.image}')`,
             }}
           />
-          
+
           {/* Dark Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-teal-20/30 to-teal-400/50" />
-          
+          <div className="from-teal-20/30 absolute inset-0 bg-gradient-to-br to-teal-400/50" />
+
           {/* Content */}
-          <div className="relative h-full flex flex-col justify-end p-12 pb-24">
-            <h2 className="text-4xl font-bold text-white mb-4">{slide.title}</h2>
+          <div className="relative flex h-full flex-col justify-end p-12 pb-24">
+            <h2 className="mb-4 text-4xl font-bold text-white">{slide.title}</h2>
             <p className="text-xl text-white/90">{slide.description}</p>
           </div>
         </div>
       ))}
 
       {/* Dot Indicators */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-2 z-10">
+      <div className="absolute bottom-8 left-1/2 z-10 flex -translate-x-1/2 transform gap-2">
         {slides.map((_, index) => (
           <button
             key={index}

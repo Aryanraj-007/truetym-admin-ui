@@ -1,7 +1,7 @@
+import { useState } from 'react';
+import { Pencil, Trash2 } from 'lucide-react';
 
-import { useState } from "react";
-import SubFeatureModal from "./SubFeatureModal";
-import { Pencil, Trash2 } from "lucide-react";
+import SubFeatureModal from '@/components/common/admin-panel/SubFeatureModal';
 
 interface RouteObj {
   path: string;
@@ -38,21 +38,21 @@ export default function FeatureDetail({
 
   if (!feature)
     return (
-      <div className="flex-1 flex items-center justify-center text-gray-400">
+      <div className="flex flex-1 items-center justify-center text-gray-400">
         Select a feature to view details
       </div>
     );
   const subFeatures = feature.subFeaturesList;
 
   return (
-    <div className="flex-1 bg-white p-6 rounded-lg shadow flex flex-col">
-      <div className="flex items-center justify-between mb-4">
+    <div className="flex flex-1 flex-col rounded-lg bg-white p-6 shadow">
+      <div className="mb-4 flex items-center justify-between">
         <div>
           <div className="text-lg font-bold">{feature.name}</div>
         </div>
       </div>
       <div className="mb-4">
-        <h4 className="font-semibold mb-2">Sub-features</h4>
+        <h4 className="mb-2 font-semibold">Sub-features</h4>
         <div className="space-y-3">
           {subFeatures.length === 0 && (
             <div className="text-gray-400">No sub-features added yet. Add one to get started.</div>
@@ -60,12 +60,12 @@ export default function FeatureDetail({
           {subFeatures.map((sf, idx) => (
             <div
               key={idx}
-              className="flex items-center gap-2 border rounded px-3 py-2 bg-white hover:bg-teal-50 transition"
+              className="flex items-center gap-2 rounded border bg-white px-3 py-2 transition hover:bg-teal-50"
             >
               <span className="rounded-full bg-gray-100 px-3 py-1 text-xs">{idx + 1}</span>
               <span className="flex-1">{sf.name}</span>
               <button
-                className="text-gray-600 hover:bg-gray-100 p-1 rounded"
+                className="rounded p-1 text-gray-600 hover:bg-gray-100"
                 onClick={() => {
                   setEditIdx(idx);
                   setEditModalOpen(true);
@@ -75,7 +75,7 @@ export default function FeatureDetail({
                 <Pencil size={18} />
               </button>
               <button
-                className="text-red-500 hover:bg-red-100 p-1 rounded"
+                className="rounded p-1 text-red-500 hover:bg-red-100"
                 onClick={() => onDeleteSubFeature(idx)}
                 title="Delete"
               >
@@ -86,7 +86,7 @@ export default function FeatureDetail({
         </div>
       </div>
       <button
-        className="self-start bg-blue-100 text-blue-700 px-3 py-1 rounded mt-3"
+        className="mt-3 self-start rounded bg-blue-100 px-3 py-1 text-blue-700"
         onClick={() => setShowModal(true)}
       >
         + Add new sub-feature
@@ -96,7 +96,7 @@ export default function FeatureDetail({
       {showModal && (
         <SubFeatureModal
           onClose={() => setShowModal(false)}
-          onSave={sub => {
+          onSave={(sub) => {
             onAddSubFeature(sub);
             setShowModal(false);
           }}
@@ -110,7 +110,7 @@ export default function FeatureDetail({
             setEditModalOpen(false);
             setEditIdx(null);
           }}
-          onSave={sf => {
+          onSave={(sf) => {
             onEditSubFeature(editIdx, sf);
             setEditModalOpen(false);
             setEditIdx(null);

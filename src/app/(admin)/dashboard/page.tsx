@@ -1,32 +1,32 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  AreaChart, 
-  Area, 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  Legend
-} from 'recharts';
-import { 
-  Users, 
-  DollarSign, 
-  UserPlus, 
-  TrendingUp, 
-  FlaskConical, 
-  Percent,
-  ArrowUp,
+import {
   ArrowDown,
-  UserCheck
+  ArrowUp,
+  DollarSign,
+  FlaskConical,
+  Percent,
+  TrendingUp,
+  UserCheck,
+  UserPlus,
+  Users,
 } from 'lucide-react';
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 // Data
 const customerGrowthData = [
@@ -48,10 +48,25 @@ const revenueData = [
 ];
 
 const recentActivity = [
-  { title: 'New subscription', description: 'Acme Corp', time: '2 minutes ago', dot: 'bg-teal-500' },
-  { title: 'Payment received', description: 'Tech Innovations', time: '15 minutes ago', dot: 'bg-green-500' },
+  {
+    title: 'New subscription',
+    description: 'Acme Corp',
+    time: '2 minutes ago',
+    dot: 'bg-teal-500',
+  },
+  {
+    title: 'Payment received',
+    description: 'Tech Innovations',
+    time: '15 minutes ago',
+    dot: 'bg-green-500',
+  },
   { title: 'Trial started', description: 'StartupXYZ', time: '1 hour ago', dot: 'bg-blue-500' },
-  { title: 'Subscription cancelled', description: 'OldClient Inc', time: '3 hours ago', dot: 'bg-red-500' },
+  {
+    title: 'Subscription cancelled',
+    description: 'OldClient Inc',
+    time: '3 hours ago',
+    dot: 'bg-red-500',
+  },
 ];
 
 const topPlans = [
@@ -84,9 +99,9 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-teal-500 border-t-transparent"></div>
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>
@@ -162,42 +177,52 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 p-6">
       {/* Header with Logout */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-semibold text-gray-900">Dashboard Overview</h1>
-          <p className="text-gray-500 mt-1">Welcome back! Here's what's happening with your business today.</p>
+          <p className="mt-1 text-gray-500">
+            Welcome back! Here&apos;s what&apos;s happening with your business today.
+          </p>
         </div>
         <button
           onClick={handleLogout}
-          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+          className="rounded-lg bg-red-600 px-4 py-2 font-medium text-white transition-colors hover:bg-red-700"
         >
           Logout
         </button>
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
         {statCards.map((stat, idx) => {
           const Icon = stat.icon;
           const isPositive = stat.trend === 'up';
-          
+
           return (
             <Card key={idx} className="relative overflow-hidden">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <Icon className="w-5 h-5 text-gray-500" />
-                  <div className={`flex items-center gap-1 text-xs font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                    {isPositive ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+                  <Icon className="h-5 w-5 text-gray-500" />
+                  <div
+                    className={`flex items-center gap-1 text-xs font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}
+                  >
+                    {isPositive ? (
+                      <ArrowUp className="h-3 w-3" />
+                    ) : (
+                      <ArrowDown className="h-3 w-3" />
+                    )}
                     {stat.change}
                   </div>
                 </div>
-                <CardTitle className="text-xs font-medium text-gray-600 mt-2">{stat.title}</CardTitle>
+                <CardTitle className="mt-2 text-xs font-medium text-gray-600">
+                  {stat.title}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-                {stat.subtext && <p className="text-xs text-gray-500 mt-1">{stat.subtext}</p>}
+                {stat.subtext && <p className="mt-1 text-xs text-gray-500">{stat.subtext}</p>}
               </CardContent>
             </Card>
           );
@@ -205,7 +230,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Customer Growth */}
         <Card>
           <CardHeader>
@@ -219,8 +244,22 @@ export default function DashboardPage() {
                 <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip />
-                <Area type="monotone" dataKey="active" stackId="1" stroke="#14b8a6" fill="#5eead4" fillOpacity={0.6} />
-                <Area type="monotone" dataKey="inactive" stackId="1" stroke="#94a3b8" fill="#cbd5e1" fillOpacity={0.6} />
+                <Area
+                  type="monotone"
+                  dataKey="active"
+                  stackId="1"
+                  stroke="#14b8a6"
+                  fill="#5eead4"
+                  fillOpacity={0.6}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="inactive"
+                  stackId="1"
+                  stroke="#94a3b8"
+                  fill="#cbd5e1"
+                  fillOpacity={0.6}
+                />
               </AreaChart>
             </ResponsiveContainer>
           </CardContent>
@@ -249,7 +288,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Bottom Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Recent Activity */}
         <Card>
           <CardHeader>
@@ -259,11 +298,11 @@ export default function DashboardPage() {
             <div className="space-y-4">
               {recentActivity.map((activity, idx) => (
                 <div key={idx} className="flex items-start gap-3">
-                  <div className={`w-2 h-2 rounded-full mt-2 ${activity.dot}`}></div>
-                  <div className="flex-1 min-w-0">
+                  <div className={`mt-2 h-2 w-2 rounded-full ${activity.dot}`}></div>
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-gray-900">{activity.title}</p>
                     <p className="text-sm text-gray-500">{activity.description}</p>
-                    <p className="text-xs text-gray-400 mt-1">{activity.time}</p>
+                    <p className="mt-1 text-xs text-gray-400">{activity.time}</p>
                   </div>
                 </div>
               ))}
@@ -280,13 +319,13 @@ export default function DashboardPage() {
             <div className="space-y-4">
               {topPlans.map((plan, idx) => (
                 <div key={idx}>
-                  <div className="flex justify-between items-center mb-2">
+                  <div className="mb-2 flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-900">{plan.name}</span>
                     <span className="text-sm text-gray-600">{plan.customers} customers</span>
                   </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2">
-                    <div 
-                      className={`${plan.color} h-2 rounded-full transition-all`} 
+                  <div className="h-2 w-full rounded-full bg-gray-100">
+                    <div
+                      className={`${plan.color} h-2 rounded-full transition-all`}
                       style={{ width: `${plan.progress}%` }}
                     ></div>
                   </div>
@@ -304,7 +343,10 @@ export default function DashboardPage() {
           <CardContent>
             <div className="space-y-4">
               {quickStats.map((stat, idx) => (
-                <div key={idx} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                <div
+                  key={idx}
+                  className="flex items-center justify-between border-b border-gray-100 py-2 last:border-0"
+                >
                   <span className="text-sm text-gray-600">{stat.label}</span>
                   <span className="text-lg font-semibold text-gray-900">{stat.value}</span>
                 </div>

@@ -440,25 +440,16 @@
 //     </div>
 //   );
 // }
-"use client";
-import React, { useState, useRef, useEffect } from "react";
-import { Trash2, Edit, X } from "lucide-react";
+'use client';
 
+import React, { useEffect, useRef, useState } from 'react';
+import { Edit, Trash2, X } from 'lucide-react';
 
 const orgsByPlan = [
-  [
-    "Global Solutions Inc",
-    "Digital Dynamics",
-    "Enterprise Systems",
-    "Future Tech Co"
-  ],
-  [
-    "Northwind LLC",
-    "Mega Enterprises"
-  ],
-  []
+  ['Global Solutions Inc', 'Digital Dynamics', 'Enterprise Systems', 'Future Tech Co'],
+  ['Northwind LLC', 'Mega Enterprises'],
+  [],
 ];
-
 
 interface Plan {
   name: string;
@@ -470,63 +461,69 @@ interface Plan {
   description?: string;
 }
 
-
 const initialPlans: Plan[] = [
-  { name: "Basic", amount: 75, period: 1, freq: "Monthly", features: ["Core HR Solution", "Time & Attendance"], customers: 4 },
-  { name: "Standard", amount: 100, period: 1, freq: "Monthly", features: ["Approval Management", "Employee Facing App", "Payroll Management", "CATI", "Plan Features", "Income tax and Declarations"], customers: 2 },
-  { name: "Basic", amount: 720, period: 1, freq: "Yearly", features: [], customers: 0 },
+  {
+    name: 'Basic',
+    amount: 75,
+    period: 1,
+    freq: 'Monthly',
+    features: ['Core HR Solution', 'Time & Attendance'],
+    customers: 4,
+  },
+  {
+    name: 'Standard',
+    amount: 100,
+    period: 1,
+    freq: 'Monthly',
+    features: [
+      'Approval Management',
+      'Employee Facing App',
+      'Payroll Management',
+      'CATI',
+      'Plan Features',
+      'Income tax and Declarations',
+    ],
+    customers: 2,
+  },
+  { name: 'Basic', amount: 720, period: 1, freq: 'Yearly', features: [], customers: 0 },
 ];
-
 
 const availableFeatures = [
-  "Core HR Solution",
-  "Time & Attendance",
-  "Approval Management",
-  "Employee Facing App",
-  "Payroll Management",
-  "Income tax and Declarations",
-  "CATI",
-  "Plan Features",
+  'Core HR Solution',
+  'Time & Attendance',
+  'Approval Management',
+  'Employee Facing App',
+  'Payroll Management',
+  'Income tax and Declarations',
+  'CATI',
+  'Plan Features',
 ];
 
-
 // Popover that closes on outside click
-function OrgsPopover({
-  orgs,
-  open,
-  close,
-}: {
-  orgs: string[];
-  open: boolean;
-  close: () => void;
-}) {
+function OrgsPopover({ orgs, open, close }: { orgs: string[]; open: boolean; close: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
-
 
   useEffect(() => {
     if (!open) return;
     function handle(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) close();
     }
-    document.addEventListener("mousedown", handle);
-    return () => document.removeEventListener("mousedown", handle);
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
   }, [open, close]);
-
 
   if (!open) return null;
   return (
     <div
       ref={ref}
-      className="absolute top-6 left-0 z-20 bg-white rounded-xl shadow-lg border border-gray-100 w-64 p-3"
+      className="absolute top-6 left-0 z-20 w-64 rounded-xl border border-gray-100 bg-white p-3 shadow-lg"
     >
-      <div className="font-semibold text-sm mb-2">Organizations</div>
+      <div className="mb-2 text-sm font-semibold">Organizations</div>
       <ul className="space-y-1">
-        {orgs.length === 0 && (
-          <li className="text-gray-400 text-sm">No organizations</li>
-        )}
+        {orgs.length === 0 && <li className="text-sm text-gray-400">No organizations</li>}
         {orgs.map((org) => (
-          <li key={org} className="flex items-center gap-2 text-gray-700 text-sm py-1">
-            <span className="inline-block w-1.5 h-1.5 bg-teal-500 rounded-full flex-shrink-0"></span>
+          <li key={org} className="flex items-center gap-2 py-1 text-sm text-gray-700">
+            <span className="inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-teal-500"></span>
             <span>{org}</span>
           </li>
         ))}
@@ -535,34 +532,26 @@ function OrgsPopover({
   );
 }
 
-
 export default function PlanManagement() {
   const [plans, setPlans] = useState<Plan[]>(initialPlans);
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [showFeatureModal, setShowFeatureModal] = useState(false);
   const [selectedPlanIdx, setSelectedPlanIdx] = useState<number>(0);
   const [orgPopoverIdx, setOrgPopoverIdx] = useState<number | null>(null);
-  const [showDetails, setShowDetails] = useState(true);
   const [newPlan, setNewPlan] = useState<Plan>({
-    name: "",
-    description: "",
-    amount: "",
+    name: '',
+    description: '',
+    amount: '',
     period: 1,
-    freq: "Monthly",
+    freq: 'Monthly',
     features: [],
     customers: 0,
   });
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
-  const [featureModalPlanIdx, setFeatureModalPlanIdx] = useState<number | null>(
-    null
-  );
-
+  const [featureModalPlanIdx, setFeatureModalPlanIdx] = useState<number | null>(null);
 
   const handleAddPlan = () => {
-    const updatedPlans = [
-      ...plans,
-      { ...newPlan, features: [], customers: 0 },
-    ];
+    const updatedPlans = [...plans, { ...newPlan, features: [], customers: 0 }];
     setPlans(updatedPlans);
     setShowPlanModal(false);
     setSelectedPlanIdx(updatedPlans.length - 1);
@@ -571,19 +560,16 @@ export default function PlanManagement() {
     setSelectedFeatures([]);
   };
 
-
   const handlePlanClick = (idx: number) => {
     setSelectedPlanIdx(idx);
     setShowDetails(true);
   };
-
 
   const handleAddFeatures = () => {
     setFeatureModalPlanIdx(selectedPlanIdx);
     setSelectedFeatures(plans[selectedPlanIdx]?.features || []);
     setShowFeatureModal(true);
   };
-
 
   const handleSaveFeatures = () => {
     if (featureModalPlanIdx === null) return;
@@ -594,25 +580,23 @@ export default function PlanManagement() {
     setFeatureModalPlanIdx(null);
     setSelectedFeatures([]);
     setNewPlan({
-      name: "",
-      description: "",
-      amount: "",
+      name: '',
+      description: '',
+      amount: '',
       period: 1,
-      freq: "Monthly",
+      freq: 'Monthly',
       features: [],
       customers: 0,
     });
   };
 
-
   const handleFeatureToggle = (feature: string) => {
     setSelectedFeatures(
       selectedFeatures.includes(feature)
         ? selectedFeatures.filter((f) => f !== feature)
-        : [...selectedFeatures, feature]
+        : [...selectedFeatures, feature],
     );
   };
-
 
   const handleDeletePlan = (idx: number) => {
     const updatedPlans = plans.filter((_, i) => i !== idx);
@@ -622,26 +606,24 @@ export default function PlanManagement() {
     }
   };
 
-
   const handleDeleteFeature = (featureIdx: number) => {
     const updatedPlans = [...plans];
-    updatedPlans[selectedPlanIdx].features =
-      updatedPlans[selectedPlanIdx].features.filter((_, i) => i !== featureIdx);
+    updatedPlans[selectedPlanIdx].features = updatedPlans[selectedPlanIdx].features.filter(
+      (_, i) => i !== featureIdx,
+    );
     setPlans(updatedPlans);
   };
 
-
   const selectedPlan = plans[selectedPlanIdx];
 
-
   return (
-    <div className="flex w-full h-full bg-white">
+    <div className="flex h-full w-full bg-white">
       {/* LEFT: Plans list */}
-      <section className="w-1/2 p-10 flex flex-col gap-8 border-r border-gray-200 overflow-y-auto">
+      <section className="flex w-1/2 flex-col gap-8 overflow-y-auto border-r border-gray-200 p-10">
         <div className="flex items-center gap-4">
           <h1 className="text-3xl font-bold text-gray-900">Plans</h1>
           <button
-            className="ml-auto bg-teal-500 text-white px-5 py-2 rounded-lg font-semibold hover:bg-teal-600 transition-all"
+            className="ml-auto rounded-lg bg-teal-500 px-5 py-2 font-semibold text-white transition-all hover:bg-teal-600"
             onClick={() => setShowPlanModal(true)}
           >
             Add custom plan
@@ -653,37 +635,43 @@ export default function PlanManagement() {
             <div
               key={idx}
               onClick={() => handlePlanClick(idx)}
-              className={`relative rounded-2xl px-6 py-5 cursor-pointer transition-all border-l-4 ${
+              className={`relative cursor-pointer rounded-2xl border-l-4 px-6 py-5 transition-all ${
                 selectedPlanIdx === idx
-                  ? "bg-cyan-100/40 border-l-teal-500 border border-teal-300/50 shadow-md"
-                  : "bg-gray-50/50 border-l-gray-300 border border-gray-200/50 hover:bg-gray-100/30"
+                  ? 'border border-teal-300/50 border-l-teal-500 bg-cyan-100/40 shadow-md'
+                  : 'border border-gray-200/50 border-l-gray-300 bg-gray-50/50 hover:bg-gray-100/30'
               }`}
             >
-              <div className="flex items-start justify-between mb-4">
-                <span className="font-bold text-lg text-gray-900">{plan.name}</span>
+              <div className="mb-4 flex items-start justify-between">
+                <span className="text-lg font-bold text-gray-900">{plan.name}</span>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDeletePlan(idx);
                   }}
-                  className="text-gray-400 hover:text-red-500 transition-colors"
+                  className="text-gray-400 transition-colors hover:text-red-500"
                   aria-label="Delete Plan"
                   title="Delete plan"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <span className="text-sm font-medium text-gray-600">Amount: <b className="text-gray-800 text-base">₹{plan.amount}</b></span>
-                  <span className="block text-sm font-medium text-gray-600">Plan type: <b className="text-gray-800 text-base">{plan.freq}</b></span>
+                  <span className="text-sm font-medium text-gray-600">
+                    Amount: <b className="text-base text-gray-800">₹{plan.amount}</b>
+                  </span>
+                  <span className="block text-sm font-medium text-gray-600">
+                    Plan type: <b className="text-base text-gray-800">{plan.freq}</b>
+                  </span>
                 </div>
                 <div className="space-y-2">
-                  <span className="text-sm font-medium text-gray-600">Features: <b className="text-gray-800 text-base">{plan.features.length}</b></span>
-                  <span className="block text-sm font-medium text-gray-600 relative select-none">
-                    Customers:{" "}
+                  <span className="text-sm font-medium text-gray-600">
+                    Features: <b className="text-base text-gray-800">{plan.features.length}</b>
+                  </span>
+                  <span className="relative block text-sm font-medium text-gray-600 select-none">
+                    Customers:{' '}
                     <span
-                      className="text-teal-600 font-bold underline cursor-pointer hover:text-teal-700"
+                      className="cursor-pointer font-bold text-teal-600 underline hover:text-teal-700"
                       onClick={(e) => {
                         e.stopPropagation();
                         setOrgPopoverIdx(orgPopoverIdx === idx ? null : idx);
@@ -704,7 +692,7 @@ export default function PlanManagement() {
         </div>
       </section>
       {/* RIGHT: Plan details */}
-      <section className="w-1/2 p-10 flex flex-col gap-6 overflow-y-auto">
+      <section className="flex w-1/2 flex-col gap-6 overflow-y-auto p-10">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-4xl font-bold text-gray-900">Plan details</h2>
@@ -713,27 +701,27 @@ export default function PlanManagement() {
             onClick={() => setShowDetails(false)}
             className="text-gray-400 hover:text-gray-600"
           >
-            <X className="w-6 h-6" />
+            <X className="h-6 w-6" />
           </button>
         </div>
 
         {selectedPlan && (
           <>
             <div>
-              <label className="text-base font-semibold text-gray-700 mb-3 block">
+              <label className="mb-3 block text-base font-semibold text-gray-700">
                 Plan name<span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={selectedPlan.name}
                 readOnly
-                className="w-full p-4 border border-gray-200 rounded-lg bg-gray-50 font-medium text-gray-900 text-lg focus:outline-none"
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 p-4 text-lg font-medium text-gray-900 focus:outline-none"
               />
             </div>
 
             <button
               onClick={handleAddFeatures}
-              className="w-full border-2 border-cyan-300 bg-cyan-100/30 text-teal-700 px-5 py-4 rounded-lg font-semibold text-base hover:bg-cyan-100/50 transition-colors"
+              className="w-full rounded-lg border-2 border-cyan-300 bg-cyan-100/30 px-5 py-4 text-base font-semibold text-teal-700 transition-colors hover:bg-cyan-100/50"
             >
               Add new feature →
             </button>
@@ -743,31 +731,31 @@ export default function PlanManagement() {
                 {selectedPlan.features.map((feature, idx) => (
                   <div
                     key={feature}
-                    className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-5 py-4 hover:border-gray-300 transition-colors"
+                    className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-5 py-4 transition-colors hover:border-gray-300"
                   >
-                    <span className="font-medium text-gray-800 text-base">{feature}</span>
+                    <span className="text-base font-medium text-gray-800">{feature}</span>
                     <div className="flex items-center gap-3">
-                      <button className="text-gray-400 hover:text-teal-600 transition-colors">
-                        <Edit className="w-3.5 h-3.5" />
+                      <button className="text-gray-400 transition-colors hover:text-teal-600">
+                        <Edit className="h-3.5 w-3.5" />
                       </button>
                       <button
-                        className="text-gray-400 hover:text-red-600 transition-colors"
+                        className="text-gray-400 transition-colors hover:text-red-600"
                         onClick={() => handleDeleteFeature(idx)}
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <h4 className="text-base font-semibold text-gray-900 mb-4">
+              <div className="py-12 text-center">
+                <h4 className="mb-4 text-base font-semibold text-gray-900">
                   No features are added.
                 </h4>
                 <button
                   onClick={handleAddFeatures}
-                  className="bg-teal-500 text-white px-6 py-3 rounded-lg text-base font-semibold hover:bg-teal-600 transition-all"
+                  className="rounded-lg bg-teal-500 px-6 py-3 text-base font-semibold text-white transition-all hover:bg-teal-600"
                 >
                   Start adding →
                 </button>
@@ -778,53 +766,53 @@ export default function PlanManagement() {
       </section>
       {/* Modal for Adding Plan */}
       {showPlanModal && (
-        <div className="fixed inset-0 bg-black/10 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-8 w-[500px] shadow-2xl border border-gray-200">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-xl text-gray-900">Add custom plan</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-sm">
+          <div className="w-[500px] rounded-2xl border border-gray-200 bg-white p-8 shadow-2xl">
+            <div className="mb-6 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-gray-900">Add custom plan</h3>
               <button
                 onClick={() => setShowPlanModal(false)}
-                className="text-gray-500 hover:text-gray-700 transition-colors"
+                className="text-gray-500 transition-colors hover:text-gray-700"
               >
-                <X className="w-6 h-6" />
+                <X className="h-6 w-6" />
               </button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="font-semibold text-gray-800 mb-2 block">
+                <label className="mb-2 block font-semibold text-gray-800">
                   Plan name <span className="text-red-500">*</span>
                 </label>
                 <input
                   placeholder="e.g. Basic"
-                  className="w-full p-4 border border-gray-300 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-teal-400/60 bg-white"
+                  className="w-full rounded-lg border border-gray-300 bg-white p-4 font-medium focus:ring-2 focus:ring-teal-400/60 focus:outline-none"
                   value={newPlan.name}
                   onChange={(e) => setNewPlan({ ...newPlan, name: e.target.value })}
                 />
               </div>
               <div>
-                <label className="font-semibold text-gray-800 mb-2 block">Plan description</label>
+                <label className="mb-2 block font-semibold text-gray-800">Plan description</label>
                 <textarea
                   placeholder="e.g. Descriptive text for your plan"
-                  className="w-full p-3 border border-gray-300 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-teal-400/60 bg-white"
+                  className="w-full rounded-lg border border-gray-300 bg-white p-3 font-medium focus:ring-2 focus:ring-teal-400/60 focus:outline-none"
                   value={newPlan.description}
                   onChange={(e) => setNewPlan({ ...newPlan, description: e.target.value })}
                   rows={2}
                 />
               </div>
               <div>
-                <label className="font-semibold text-gray-800 mb-2 block">
+                <label className="mb-2 block font-semibold text-gray-800">
                   Billing amount (per license) <span className="text-red-500">*</span>
                 </label>
                 <input
                   placeholder="e.g. 100.00"
                   type="number"
-                  className="w-full p-4 border border-gray-300 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-teal-400/60 bg-white"
+                  className="w-full rounded-lg border border-gray-300 bg-white p-4 font-medium focus:ring-2 focus:ring-teal-400/60 focus:outline-none"
                   value={newPlan.amount}
                   onChange={(e) => setNewPlan({ ...newPlan, amount: e.target.value })}
                 />
               </div>
               <div>
-                <label className="font-semibold text-gray-800 mb-2 block">
+                <label className="mb-2 block font-semibold text-gray-800">
                   Billing frequency <span className="text-red-500">*</span>
                 </label>
                 <div className="flex gap-4">
@@ -832,11 +820,11 @@ export default function PlanManagement() {
                     type="number"
                     min={1}
                     value={newPlan.period}
-                    className="w-1/3 p-4 border border-gray-300 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-teal-400/60 bg-white"
+                    className="w-1/3 rounded-lg border border-gray-300 bg-white p-4 font-medium focus:ring-2 focus:ring-teal-400/60 focus:outline-none"
                     onChange={(e) => setNewPlan({ ...newPlan, period: +e.target.value })}
                   />
                   <select
-                    className="w-2/3 p-4 border border-gray-300 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-teal-400/60 bg-white"
+                    className="w-2/3 rounded-lg border border-gray-300 bg-white p-4 font-medium focus:ring-2 focus:ring-teal-400/60 focus:outline-none"
                     value={newPlan.freq}
                     onChange={(e) => setNewPlan({ ...newPlan, freq: e.target.value })}
                   >
@@ -846,15 +834,15 @@ export default function PlanManagement() {
                 </div>
               </div>
             </div>
-            <div className="flex justify-end gap-4 mt-6">
+            <div className="mt-6 flex justify-end gap-4">
               <button
-                className="px-5 py-3 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50"
+                className="rounded-lg border border-gray-300 px-5 py-3 font-semibold text-gray-700 hover:bg-gray-50"
                 onClick={() => setShowPlanModal(false)}
               >
                 Cancel
               </button>
               <button
-                className="px-5 py-3 bg-teal-500 text-white rounded-lg font-semibold hover:bg-teal-600 transition-all"
+                className="rounded-lg bg-teal-500 px-5 py-3 font-semibold text-white transition-all hover:bg-teal-600"
                 onClick={handleAddPlan}
               >
                 Save
@@ -866,35 +854,35 @@ export default function PlanManagement() {
 
       {/* Modal for Adding/Editing Features */}
       {showFeatureModal && (
-        <div className="fixed inset-0 bg-black/10 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-8 w-[500px] shadow-2xl max-h-[90vh] overflow-y-auto border border-gray-200">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-xl text-gray-900">Add new feature</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-sm">
+          <div className="max-h-[90vh] w-[500px] overflow-y-auto rounded-2xl border border-gray-200 bg-white p-8 shadow-2xl">
+            <div className="mb-6 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-gray-900">Add new feature</h3>
               <button
                 onClick={() => setShowFeatureModal(false)}
-                className="text-gray-500 hover:text-gray-700 transition-colors"
+                className="text-gray-500 transition-colors hover:text-gray-700"
               >
-                <X className="w-6 h-6" />
+                <X className="h-6 w-6" />
               </button>
             </div>
             <div className="mb-5">
-              <label className="font-semibold text-gray-800 mb-2 block">Available features</label>
-              <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50">
+              <label className="mb-2 block font-semibold text-gray-800">Available features</label>
+              <div className="max-h-64 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-3">
                 {availableFeatures.map((feature) => (
                   <div
                     key={feature}
-                    className="flex items-center mb-3 p-2 hover:bg-gray-100 rounded cursor-pointer transition-colors"
+                    className="mb-3 flex cursor-pointer items-center rounded p-2 transition-colors hover:bg-gray-100"
                   >
                     <input
                       type="checkbox"
                       id={`feature-${feature}`}
                       checked={selectedFeatures.includes(feature)}
                       onChange={() => handleFeatureToggle(feature)}
-                      className="mr-3 w-4 h-4 text-teal-500 rounded focus:ring-teal-400 cursor-pointer accent-teal-500"
+                      className="mr-3 h-4 w-4 cursor-pointer rounded text-teal-500 accent-teal-500 focus:ring-teal-400"
                     />
                     <label
                       htmlFor={`feature-${feature}`}
-                      className="text-sm flex-1 cursor-pointer font-medium text-gray-800"
+                      className="flex-1 cursor-pointer text-sm font-medium text-gray-800"
                     >
                       {feature}
                     </label>
@@ -902,15 +890,15 @@ export default function PlanManagement() {
                 ))}
               </div>
             </div>
-            <div className="flex justify-end gap-4 mt-5">
+            <div className="mt-5 flex justify-end gap-4">
               <button
-                className="px-5 py-3 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50"
+                className="rounded-lg border border-gray-300 px-5 py-3 font-semibold text-gray-700 hover:bg-gray-50"
                 onClick={() => setShowFeatureModal(false)}
               >
                 Cancel
               </button>
               <button
-                className="px-5 py-3 bg-teal-500 text-white rounded-lg font-semibold hover:bg-teal-600 transition-all"
+                className="rounded-lg bg-teal-500 px-5 py-3 font-semibold text-white transition-all hover:bg-teal-600"
                 onClick={handleSaveFeatures}
               >
                 Save
@@ -922,6 +910,3 @@ export default function PlanManagement() {
     </div>
   );
 }
-
-
-
