@@ -11,6 +11,7 @@ interface PhoneInputProps {
   rememberMe: boolean;
   setRememberMe: (value: boolean) => void;
   onSendOTP: () => void;
+  error?: string | null;
 }
 
 export default function PhoneInput({
@@ -21,6 +22,7 @@ export default function PhoneInput({
   rememberMe,
   setRememberMe,
   onSendOTP,
+  error,
 }: PhoneInputProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -34,30 +36,32 @@ export default function PhoneInput({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold text-gray-900 mb-2">Sign In</h2>
-        <p className="text-gray-600 text-sm">Enter your mobile number to get started </p>
+        <h2 className="mb-2 text-2xl font-semibold text-gray-900">Sign In</h2>
+        <p className="text-sm text-gray-600">Enter your mobile number to get started </p>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-3">
+          <p className="text-sm font-medium text-red-600">{error}</p>
+        </div>
+      )}
 
       {/* Mobile Number Input */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Mobile Number
-        </label>
+        <label className="mb-2 block text-sm font-medium text-gray-700">Mobile Number</label>
         <div className="flex gap-2">
           {/* Country Code Dropdown */}
           <div className="relative">
             <button
               type="button"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-2 px-4 py-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 hover:bg-gray-50 focus:ring-2 focus:ring-teal-500 focus:outline-none"
             >
-              
               <span className="font-medium">{selectedCountry.name}</span>
               <span className="text-gray-600">{selectedCountry.code}</span>
               <svg
-                className={`w-4 h-4 transition-transform ${
-                  isDropdownOpen ? 'rotate-180' : ''
-                }`}
+                className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -73,7 +77,7 @@ export default function PhoneInput({
 
             {/* Dropdown Menu */}
             {isDropdownOpen && (
-              <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+              <div className="absolute top-full left-0 z-10 mt-1 w-64 rounded-lg border border-gray-200 bg-white shadow-lg">
                 {countries.map((country) => (
                   <button
                     key={country.code}
@@ -82,9 +86,8 @@ export default function PhoneInput({
                       setCountryCode(country.code);
                       setIsDropdownOpen(false);
                     }}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+                    className="flex w-full items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50"
                   >
-                    
                     <span className="flex-1 text-left font-medium">{country.country}</span>
                     <span className="text-gray-600">{country.code}</span>
                   </button>
@@ -99,7 +102,7 @@ export default function PhoneInput({
             value={phoneNumber}
             onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
             placeholder="Enter mobile number"
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            className="flex-1 rounded-lg border border-gray-300 px-4 py-3 focus:border-transparent focus:ring-2 focus:ring-teal-500 focus:outline-none"
             maxLength={10}
           />
         </div>
@@ -112,7 +115,7 @@ export default function PhoneInput({
           id="remember"
           checked={rememberMe}
           onChange={(e) => setRememberMe(e.target.checked)}
-          className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+          className="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
         />
         <label htmlFor="remember" className="ml-2 text-sm text-gray-700">
           Remember me
@@ -123,7 +126,7 @@ export default function PhoneInput({
       <button
         onClick={onSendOTP}
         disabled={phoneNumber.length < 10}
-        className="w-full py-3 px-4 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+        className="w-full rounded-lg bg-teal-600 px-4 py-3 font-medium text-white transition-colors hover:bg-teal-700 focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-300"
       >
         Send OTP
       </button>
@@ -134,13 +137,13 @@ export default function PhoneInput({
           <div className="w-full border-t border-gray-300" />
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="px-4 bg-gray-50 text-gray-500">OR</span>
+          <span className="bg-gray-50 px-4 text-gray-500">OR</span>
         </div>
       </div>
 
       {/* Passkey Sign In */}
-      <button className="w-full py-3 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <button className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-3 transition-colors hover:bg-gray-50">
+        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -154,7 +157,7 @@ export default function PhoneInput({
       {/* Sign In Link */}
       <p className="text-center text-sm text-gray-600">
         Already have an account?{' '}
-        <Link href="/signin" className="text-teal-600 hover:text-teal-700 font-medium">
+        <Link href="/signin" className="font-medium text-teal-600 hover:text-teal-700">
           Sign in here
         </Link>
       </p>
