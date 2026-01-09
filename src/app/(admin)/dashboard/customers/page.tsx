@@ -14,6 +14,7 @@ export default function CustomersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const [useMockData, setUseMockData] = useState(false);
   const [filters, setFilters] = useState({
@@ -120,17 +121,6 @@ export default function CustomersPage() {
             {error}
           </p>
 
-          {!hasToken && (
-            <div className="mt-3 rounded border border-orange-200 bg-orange-50 p-3">
-              <p className="text-sm font-semibold text-orange-700">⚠️ No Authentication Token</p>
-              <p className="mt-1 text-xs text-orange-600">To use the real API, you need to:</p>
-              <ul className="mt-1 ml-4 list-disc text-xs text-orange-600">
-                <li>Log in to the admin panel to get a valid token</li>
-                <li>Or provide a valid token in the Authentication section below</li>
-              </ul>
-            </div>
-          )}
-
           {useMockData && (
             <div className="mt-3 rounded border border-blue-200 bg-blue-50 p-3">
               <p className="text-sm font-semibold text-blue-700">💡 Tip: Set Your Token</p>
@@ -151,9 +141,6 @@ export default function CustomersPage() {
               className={`mt-1 font-mono text-xs ${useMockData ? 'text-yellow-600' : 'text-red-600'}`}
             >
               API URL: {process.env.NEXT_PUBLIC_API_URL}
-            </p>
-            <p className={`mt-1 text-xs ${useMockData ? 'text-yellow-600' : 'text-red-600'}`}>
-              Status: {getTokenStatus()}
             </p>
             <p className={`mt-1 text-xs ${useMockData ? 'text-yellow-600' : 'text-red-600'}`}>
               Check browser console (F12) for more details
