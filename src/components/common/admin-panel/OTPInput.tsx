@@ -1,16 +1,15 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 
 interface OTPInputProps {
   phoneNumber: string;
-  onVerify: (otp: string) => void;
+  onVerify: (otp: string) => Promise<boolean> | boolean | void;
   onGoBack: () => void;
+  error?: string | null;
 }
 
-export default function OTPInput({ phoneNumber, onVerify, onGoBack }: OTPInputProps) {
-  const router = useRouter();
+export default function OTPInput({ phoneNumber, onVerify, onGoBack, error }: OTPInputProps) {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [timer, setTimer] = useState(59);
   const [canResend, setCanResend] = useState(false);
@@ -41,10 +40,6 @@ export default function OTPInput({ phoneNumber, onVerify, onGoBack }: OTPInputPr
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
-
-    if (newOtp.every((digit) => digit !== '') && index === 5) {
-      verifyOTP(newOtp.join(''));
-    }
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -63,24 +58,23 @@ export default function OTPInput({ phoneNumber, onVerify, onGoBack }: OTPInputPr
 
     const lastIndex = Math.min(pastedData.length, 5);
     inputRefs.current[lastIndex]?.focus();
-
-    if (pastedData.length === 6) {
-      verifyOTP(pastedData);
-    }
   };
 
   const verifyOTP = (otpValue: string) => {
-    if (otpValue === '123456') {
-      // Store auth token in localStorage
-      localStorage.setItem('authToken', 'user_' + Date.now());
-      // Redirect to dashboard
-      router.push('/dashboard');
-    } else {
-      alert('Invalid OTP. Please enter 123456');
-      // Reset OTP fields
-      setOtp(['', '', '', '', '', '']);
-      inputRefs.current[0]?.focus();
-    }
+    // Delegate verification to parent via onVerify prop
+    Promise.resolve(onVerify(otpValue))
+      .then((result) => {
+        // If parent returns explicit false, treat as failure
+        if (result === false) {
+          setOtp(['', '', '', '', '', '']);
+          inputRefs.current[0]?.focus();
+        }
+        // If parent handled navigation, do nothing here
+      })
+      .catch(() => {
+        setOtp(['', '', '', '', '', '']);
+        inputRefs.current[0]?.focus();
+      });
   };
 
   const handleResend = () => {
@@ -100,13 +94,20 @@ export default function OTPInput({ phoneNumber, onVerify, onGoBack }: OTPInputPr
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold text-gray-900 mb-2">Verify your account</h2>
-        <p className="text-gray-600 text-sm">
-          We've sent a code to <span className="font-medium">{phoneNumber}</span>
+        <h2 className="mb-2 text-2xl font-semibold text-gray-900">Verify your account</h2>
+        <p className="text-sm text-gray-600">
+          We have sent a code to <span className="font-medium">{phoneNumber}</span>
         </p>
       </div>
 
-      <div className="flex gap-3 justify-center" onPaste={handlePaste}>
+      {/* Error Message */}
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-3">
+          <p className="text-sm font-medium text-red-600">{error}</p>
+        </div>
+      )}
+
+      <div className="flex justify-center gap-3" onPaste={handlePaste}>
         {otp.map((digit, index) => (
           <input
             key={index}
@@ -119,10 +120,8 @@ export default function OTPInput({ phoneNumber, onVerify, onGoBack }: OTPInputPr
             value={digit}
             onChange={(e) => handleChange(index, e.target.value)}
             onKeyDown={(e) => handleKeyDown(index, e)}
-            className={`w-14 h-14 text-center text-2xl font-semibold border-2 rounded-lg focus:outline-none transition-colors ${
-              digit
-                ? 'border-teal-600 bg-teal-50'
-                : 'border-gray-300 focus:border-teal-500'
+            className={`h-14 w-14 rounded-lg border-2 text-center text-2xl font-semibold transition-colors focus:outline-none ${
+              digit ? 'border-teal-600 bg-teal-50' : 'border-gray-300 focus:border-teal-500'
             }`}
           />
         ))}
@@ -132,12 +131,12 @@ export default function OTPInput({ phoneNumber, onVerify, onGoBack }: OTPInputPr
         {canResend ? (
           <button
             onClick={handleResend}
-            className="text-teal-600 hover:text-teal-700 font-medium text-sm"
+            className="text-sm font-medium text-teal-600 hover:text-teal-700"
           >
             Resend code
           </button>
         ) : (
-          <p className="text-gray-600 text-sm">
+          <p className="text-sm text-gray-600">
             Resend code in <span className="font-medium">{timer}s</span>
           </p>
         )}
@@ -146,21 +145,21 @@ export default function OTPInput({ phoneNumber, onVerify, onGoBack }: OTPInputPr
       <button
         onClick={handleSubmit}
         disabled={otp.some((digit) => !digit)}
-        className="w-full py-3 px-4 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+        className="w-full rounded-lg bg-teal-600 px-4 py-3 font-medium text-white transition-colors hover:bg-teal-700 focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-300"
       >
         Submit
       </button>
 
       <p className="text-center text-sm text-gray-600">
         Want to login with different number?{' '}
-        <button onClick={onGoBack} className="text-teal-600 hover:text-teal-700 font-medium">
+        <button onClick={onGoBack} className="font-medium text-teal-600 hover:text-teal-700">
           Go back & change it
         </button>
       </p>
 
-      <div className="fixed bottom-6 right-6 bg-white border border-gray-200 rounded-lg shadow-lg p-4 flex items-center gap-3">
-        <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
-          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="fixed right-6 bottom-6 flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-lg">
+        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-500">
+          <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
@@ -169,4 +168,3 @@ export default function OTPInput({ phoneNumber, onVerify, onGoBack }: OTPInputPr
     </div>
   );
 }
-
