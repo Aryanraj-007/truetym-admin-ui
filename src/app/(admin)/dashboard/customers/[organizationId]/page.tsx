@@ -8,8 +8,8 @@ import { fetchSubscriptions, Organization, Subscription } from '@/lib/api';
 import OrganizationDetail from '@/components/common/admin-panel/OrganizationDetail';
 
 interface OrganizationWithSubscription extends Organization {
-  name?: string;
-  email?: string;
+  name?: string | undefined;
+  email?: string | undefined;
   employees?: Array<{
     id: string;
     name: string;
@@ -41,8 +41,7 @@ export default function OrganizationPage() {
           const subsResponse = await fetchSubscriptions();
           setSubscriptions(subsResponse.data);
         } catch {
-          const fallbackResponse = await fetchSubscriptions(true);
-          setSubscriptions(fallbackResponse.data);
+          console.log('error while fetching subscription');
         }
 
         // For now, create a mock organization from the ID

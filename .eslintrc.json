@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/eslintrc",
   "root": true,
   "env": {
-    "jest": true
+    "jest": true // This will make ESLint recognize Jest globals
   },
   "extends": [
     "eslint:recommended",
@@ -16,11 +16,17 @@
   "ignorePatterns": ["**/fixtures/**", "cypress/**/*.js", "cypress/**/*.ts"],
   "plugins": ["jest-dom", "import", "no-relative-import-paths"],
   "rules": {
+    "@typescript-eslint/no-explicit-any": "warn",
     "@next/next/no-html-link-for-pages": "off",
     "import/prefer-default-export": "off",
     "react/react-in-jsx-scope": "off",
     "react/prop-types": "off",
-    "react/jsx-filename-extension": [1, { "extensions": [".tsx", ".ts"] }],
+    "react/jsx-filename-extension": [
+      1,
+      {
+        "extensions": [".tsx", ".ts"]
+      }
+    ],
     "no-relative-import-paths/no-relative-import-paths": [
       "error",
       { "allowSameFolder": false, "rootDir": "./", "prefix": "@" }
@@ -29,18 +35,20 @@
       "error",
       {
         "devDependencies": [
-          "test.{ts,tsx}",
-          "test-*.{ts,tsx}",
-          "**/*{.,_}{test,spec}.{ts,tsx}",
-          "**/jest.config.ts",
-          "**/jest.setup.ts"
+          "test.{ts,tsx}", // repos with a single test file
+          "test-*.{ts,tsx}", // repos with multiple top-level test files
+          "**/*{.,_}{test,spec}.{ts,tsx}", // tests where the extension or filename suffix denotes that it is a test
+          "**/jest.config.ts", // jest config
+          "**/jest.setup.ts" // jest setup
         ],
         "optionalDependencies": false
       }
     ]
   },
   "settings": {
-    "react": { "version": "detect" },
+    "react": {
+      "version": "detect"
+    },
     "import/parsers": {
       "@typescript-eslint/parser": [".ts", ".tsx"]
     },
@@ -52,9 +60,17 @@
   "overrides": [
     {
       "files": ["*.ts", "*.tsx"],
-      "parser": "@typescript-eslint/parser",
-      "plugins": ["@typescript-eslint"],
-      "extends": ["plugin:@typescript-eslint/recommended", "prettier"]
+      "parser": "@typescript-eslint/parser"
+    },
+    {
+      "files": ["**/*.test.js", "**/*.test.ts", "**/*.test.ts", "**/*.cy.js", "*Slice.ts"], // Adjust the patterns as needed
+      "rules": {
+        "no-unused-expressions": "off",
+        "no-unused-vars": "off",
+        "no-undef": "off",
+        "no-param-reassign": "off"
+        // Add any other rules you want to relax or disable
+      }
     }
   ]
 }

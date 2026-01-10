@@ -23,15 +23,35 @@ export default function CustomersPage() {
     trialStatus: '',
   });
 
-  // Fetch organizations on component mount and when pagination/filters change
-  useEffect(() => {
-    const loadOrganizations = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const loadOrganizations = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        try {
-          const response = await fetchOrganizations(
+      try {
+        const response = await fetchOrganizations(
+          pageNumber,
+          pageSize,
+          filters.name,
+          filters.subscriptionPlan,
+          filters.trialStatus,
+          'created_at',
+          'ASC',
+          // useMockData,
+        );
+
+        if (!response.succeeded) {
+          throw new Error(response.message?.join(', ') || 'API returned error');
+        }
+
+        setOrganizations(response.data);
+        setTotalItems(response.totalItems);
+      } catch (apiError) {
+        // On API error, fall back to mock data
+        if (!useMockData) {
+          setUseMockData(true);
+
+          const mockResponse = await fetchOrganizations(
             pageNumber,
             pageSize,
             filters.name,
@@ -39,50 +59,30 @@ export default function CustomersPage() {
             filters.trialStatus,
             'created_at',
             'ASC',
-            useMockData,
+            // true, // Use mock data
           );
 
-          if (!response.succeeded) {
-            throw new Error(response.message?.join(', ') || 'API returned error');
-          }
-
-          setOrganizations(response.data);
-          setTotalItems(response.totalItems);
-        } catch (apiError) {
-          // On API error, fall back to mock data
-          if (!useMockData) {
-            setUseMockData(true);
-
-            const mockResponse = await fetchOrganizations(
-              pageNumber,
-              pageSize,
-              filters.name,
-              filters.subscriptionPlan,
-              filters.trialStatus,
-              'created_at',
-              'ASC',
-              true, // Use mock data
-            );
-
-            setOrganizations(mockResponse.data);
-            setTotalItems(mockResponse.totalItems);
-            setError(
-              `API Error - Using sample data. ${apiError instanceof Error ? apiError.message : ''}`,
-            );
-          } else {
-            throw apiError;
-          }
+          setOrganizations(mockResponse.data);
+          setTotalItems(mockResponse.totalItems);
+          setError(
+            `API Error - Using sample data. ${apiError instanceof Error ? apiError.message : ''}`,
+          );
+        } else {
+          throw apiError;
         }
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : 'Failed to fetch organizations';
-        setError(errorMsg);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to fetch organizations';
+      setError(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // Fetch organizations on component mount and when pagination/filters change
+  useEffect(() => {
     loadOrganizations();
-  }, [pageNumber, filters, useMockData]);
+  }, [pageNumber, filters, useMockData, pageSize]);
 
   const handleSubscriptionChange = (idx: number, newPlan: string) => {
     const updated = [...organizations];
