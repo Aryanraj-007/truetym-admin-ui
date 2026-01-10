@@ -1,2 +1,3 @@
 # truetym-admin-ui
-For truetym admin
+For truetym admin ui
+
