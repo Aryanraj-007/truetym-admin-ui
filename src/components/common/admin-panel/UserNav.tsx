@@ -1,7 +1,4 @@
-
-
 // 'use client';
-
 
 // export default function UserNav() {
 //   return (
@@ -18,10 +15,9 @@
 // }
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { LogOut } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-
+import { LogOut } from 'lucide-react';
 
 export default function UserNav() {
   const [isOpen, setIsOpen] = useState(false);
@@ -49,11 +45,11 @@ export default function UserNav() {
     try {
       // If using NextAuth
       // await signOut({ redirect: false });
-      
+
       // Clear any local storage or cookies if needed
       localStorage.clear();
       sessionStorage.clear();
-      
+
       // Redirect to signup page
       router.push('/signup');
     } catch (error) {
@@ -68,23 +64,23 @@ export default function UserNav() {
       {/* Admin Avatar Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-10 h-10 rounded-full bg-teal-500 flex items-center justify-center text-white font-semibold hover:bg-teal-600 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2"
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-500 font-semibold text-white transition-colors hover:bg-teal-600 focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 focus:outline-none"
       >
         A
       </button>
 
       {/* Dropdown Menu - Only visible when isOpen is true */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+        <div className="absolute right-0 z-50 mt-2 w-56 rounded-lg border border-gray-200 bg-white shadow-lg">
           {/* User Info Section */}
-          <div className="p-4 border-b border-gray-100">
+          <div className="border-b border-gray-100 p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-teal-500 flex items-center justify-center text-white font-semibold flex-shrink-0">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-teal-500 font-semibold text-white">
                 A
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-gray-900">Admin User</p>
-                <p className="text-xs text-gray-500 truncate">admin@trutym.com</p>
+                <p className="truncate text-xs text-gray-500">admin@trutym.com</p>
               </div>
             </div>
           </div>
@@ -92,9 +88,9 @@ export default function UserNav() {
           {/* Logout Button */}
           <button
             onClick={handleLogout}
-            className="w-full px-4 py-3 flex items-center gap-3 text-sm text-red-600 hover:bg-red-50 transition-colors focus:outline-none"
+            className="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-600 transition-colors hover:bg-red-50 focus:outline-none"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="h-4 w-4" />
             <span>Logout</span>
           </button>
         </div>

@@ -269,4 +269,3 @@ export async function fetchEmployees(
     throw new Error(`Failed to fetch employees: ${errorMessage}`);
   }
 }
-

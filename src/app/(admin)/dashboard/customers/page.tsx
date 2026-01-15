@@ -48,7 +48,7 @@
 //   const [error, setError] = useState<string | null>(null);
 
 //   const [pageNumber, setPageNumber] = useState(1);
-//   const [pageSize, setPageSize] = useState(25); 
+//   const [pageSize, setPageSize] = useState(25);
 //   const [totalItems, setTotalItems] = useState(0);
 
 //   const [filters, setFilters] = useState({
@@ -151,9 +151,8 @@
 //         Manage all organizations and their members
 //       </p>
 
-      
 //       <div className="flex-grow">
-       
+
 //         <div className="mb-4 flex flex-wrap items-center gap-2">
 //           <input
 //             type="text"
@@ -193,7 +192,6 @@
 //           </select>
 //         </div>
 
-      
 //         {loading && (
 //           <div className="flex justify-center py-8">
 //             <div className="text-gray-500">Loading organizations...</div>
@@ -299,7 +297,6 @@
 //         )}
 //       </div>
 
-    
 //       {totalItems > 0 && (
 //         <div className="mt-auto pt-4 flex items-center justify-between text-sm text-gray-600">
 //           <span>
@@ -316,7 +313,7 @@
 //                 }
 //                 className="h-8 rounded border border-gray-300 px-2 text-xs"
 //               >
-               
+
 //                 {[25, 50, 100].map((size) => (
 //                   <option key={size} value={size}>
 //                     {size}
@@ -353,17 +350,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import {
-  fetchOrganizations,
-  getStatusLabel,
-  Organization,
-} from '@/lib/api';
+import { fetchOrganizations, getStatusLabel, Organization } from '@/lib/api';
 
 const subscriptionOptions = ['Pro', 'Basic', 'Standard', 'Core'];
 
-const formatSubscriptionDate = (
-  value?: string | number | null,
-): string => {
+const formatSubscriptionDate = (value?: string | number | null): string => {
   if (!value) return '-';
 
   const seconds = Number(value);
@@ -381,9 +372,7 @@ const formatSubscriptionDate = (
 
 const truncateOrgName = (name?: string, maxLength = 12) => {
   if (!name) return '-';
-  return name.length > maxLength
-    ? `${name.slice(0, maxLength)}...`
-    : name;
+  return name.length > maxLength ? `${name.slice(0, maxLength)}...` : name;
 };
 
 const getTotalLicences = (total?: number | null) => {
@@ -441,17 +430,10 @@ export default function CustomersPage() {
 
   const filteredOrganizations = useMemo(() => {
     return organizations.filter((org) => {
-      if (
-        filters.name &&
-        !org.org_name?.toLowerCase().includes(filters.name.toLowerCase())
-      )
+      if (filters.name && !org.org_name?.toLowerCase().includes(filters.name.toLowerCase()))
         return false;
 
-      if (
-        filters.subscriptionPlan &&
-        org.planTitle !== filters.subscriptionPlan
-      )
-        return false;
+      if (filters.subscriptionPlan && org.planTitle !== filters.subscriptionPlan) return false;
 
       if (filters.trialStatus) {
         const statusLabel = getStatusLabel(org.status)?.toLowerCase();
@@ -476,15 +458,14 @@ export default function CustomersPage() {
     setPageNumber(1);
   };
 
-  const startItem =
-    totalItems === 0 ? 0 : (pageNumber - 1) * pageSize + 1;
+  const startItem = totalItems === 0 ? 0 : (pageNumber - 1) * pageSize + 1;
   const endItem = Math.min(pageNumber * pageSize, totalItems);
   const totalPages = Math.ceil(totalItems / pageSize);
 
   if (error) {
     return (
-      <div className="min-h-screen p-8 flex items-center justify-center">
-        <div className="text-red-600 text-center">
+      <div className="flex min-h-screen items-center justify-center p-8">
+        <div className="text-center text-red-600">
           <p className="font-semibold">Error loading organizations</p>
           <p className="text-sm">{error}</p>
         </div>
@@ -493,11 +474,9 @@ export default function CustomersPage() {
   }
 
   return (
-    <div className="min-h-screen p-8 max-w-full overflow-x-hidden flex flex-col">
+    <div className="flex min-h-screen max-w-full flex-col overflow-x-hidden p-8">
       <h1 className="text-3xl font-bold text-gray-900">Organizations</h1>
-      <p className="mb-4 text-gray-500">
-        Manage all organizations and their members
-      </p>
+      <p className="mb-4 text-gray-500">Manage all organizations and their members</p>
 
       <div className="flex-grow">
         <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -505,17 +484,13 @@ export default function CustomersPage() {
             type="text"
             placeholder="Search..."
             value={filters.name}
-            onChange={(e) =>
-              handleFilterChange('name', e.target.value)
-            }
+            onChange={(e) => handleFilterChange('name', e.target.value)}
             className="h-8 w-56 rounded border border-gray-300 px-2 py-1 text-xs"
           />
 
           <select
             value={filters.subscriptionPlan}
-            onChange={(e) =>
-              handleFilterChange('subscriptionPlan', e.target.value)
-            }
+            onChange={(e) => handleFilterChange('subscriptionPlan', e.target.value)}
             className="h-8 w-40 rounded border border-gray-300 px-2 py-1 text-xs"
           >
             <option value="">All Plans</option>
@@ -528,9 +503,7 @@ export default function CustomersPage() {
 
           <select
             value={filters.trialStatus}
-            onChange={(e) =>
-              handleFilterChange('trialStatus', e.target.value)
-            }
+            onChange={(e) => handleFilterChange('trialStatus', e.target.value)}
             className="h-8 w-40 rounded border border-gray-300 px-2 py-1 text-xs"
           >
             <option value="">All Status</option>
@@ -540,9 +513,7 @@ export default function CustomersPage() {
         </div>
 
         {loading && (
-          <div className="flex justify-center py-8 text-gray-500">
-            Loading organizations...
-          </div>
+          <div className="flex justify-center py-8 text-gray-500">Loading organizations...</div>
         )}
 
         {!loading && (
@@ -559,10 +530,7 @@ export default function CustomersPage() {
                     'Renewal Date',
                     'Status',
                   ].map((h) => (
-                    <th
-                      key={h}
-                      className="px-4 py-3 text-left text-sm font-medium text-gray-600"
-                    >
+                    <th key={h} className="px-4 py-3 text-left text-sm font-medium text-gray-600">
                       {h}
                     </th>
                   ))}
@@ -578,8 +546,7 @@ export default function CustomersPage() {
                   </tr>
                 ) : (
                   filteredOrganizations.map((org) => {
-                    const statusLabel =
-                      getStatusLabel(org.status) || 'Inactive';
+                    const statusLabel = getStatusLabel(org.status) || 'Inactive';
                     const isActive = statusLabel === 'Active';
 
                     return (
@@ -607,9 +574,7 @@ export default function CustomersPage() {
                         <td className="px-4 py-3">
                           <span
                             className={`rounded px-3 py-1 text-xs font-semibold ${
-                              isActive
-                                ? 'bg-green-500 text-white'
-                                : 'bg-red-500 text-white'
+                              isActive ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
                             }`}
                           >
                             {statusLabel}
@@ -626,7 +591,7 @@ export default function CustomersPage() {
       </div>
 
       {totalItems > 0 && (
-        <div className="mt-auto pt-4 flex items-center justify-between text-sm">
+        <div className="mt-auto flex items-center justify-between pt-4 text-sm">
           <span>
             Showing {startItem}–{endItem} of {totalItems} entries
           </span>
@@ -638,7 +603,9 @@ export default function CustomersPage() {
               className="h-8 rounded border px-2 text-xs"
             >
               {[25, 50, 100].map((size) => (
-                <option key={size} value={size}>{size}</option>
+                <option key={size} value={size}>
+                  {size}
+                </option>
               ))}
             </select>
 
@@ -663,5 +630,3 @@ export default function CustomersPage() {
     </div>
   );
 }
-
-

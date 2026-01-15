@@ -78,7 +78,7 @@
 // }
 // import { useState, useEffect } from "react";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from 'react';
 
 interface SubFeatureModalProps {
   onClose: () => void;
@@ -104,14 +104,14 @@ export default function SubFeatureModal({
   initial,
   editMode,
 }: SubFeatureModalProps) {
-  const [name, setName] = useState(initial?.name || "");
-  const [desc, setDesc] = useState(initial?.desc || "");
-  const [planId, setPlanId] = useState(initial?.planId || "");
+  const [name, setName] = useState(initial?.name || '');
+  const [desc, setDesc] = useState(initial?.desc || '');
+  const [planId, setPlanId] = useState(initial?.planId || '');
   const [routes, setRoutes] = useState<RouteObj[]>(
-    initial?.routes && initial.routes.length ? initial.routes : []
+    initial?.routes && initial.routes.length ? initial.routes : [],
   );
   const [pages, setPages] = useState<string[]>(
-    initial?.pages && initial.pages.length ? initial.pages : []
+    initial?.pages && initial.pages.length ? initial.pages : [],
   );
 
   const isValid = name.length > 0 && planId.length > 0;
@@ -134,61 +134,61 @@ export default function SubFeatureModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-[rgba(34,49,63,0.16)] flex items-center justify-center z-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(34,49,63,0.16)]">
       <form
         onSubmit={handleSubmit}
-        className="bg-white rounded-xl shadow-2xl w-[650px] min-h-[750px] max-h-[94vh] px-10 py-10 flex flex-col gap-8 overflow-y-auto"
-        style={{ boxShadow: "0 3px 48px rgba(0,0,0,0.14)" }}
+        className="flex max-h-[94vh] min-h-[750px] w-[650px] flex-col gap-8 overflow-y-auto rounded-xl bg-white px-10 py-10 shadow-2xl"
+        style={{ boxShadow: '0 3px 48px rgba(0,0,0,0.14)' }}
       >
-        <h2 className="font-bold text-2xl mb-2">Add New Sub-Feature</h2>
+        <h2 className="mb-2 text-2xl font-bold">Add New Sub-Feature</h2>
 
         {/* Sub-feature name */}
         <div>
-          <label className="text-teal-700 text-sm font-semibold mb-1 block">
-            Sub-Feature Name <span className="text-teal-400 font-bold">**</span>
+          <label className="mb-1 block text-sm font-semibold text-teal-700">
+            Sub-Feature Name <span className="font-bold text-teal-400">**</span>
           </label>
           <input
-            className="w-full border-b border-b-gray-300 outline-none px-2 py-2 text-[1.13rem] font-medium bg-[rgba(0,0,0,0.03)]"
+            className="w-full border-b border-b-gray-300 bg-[rgba(0,0,0,0.03)] px-2 py-2 text-[1.13rem] font-medium outline-none"
             placeholder="Enter sub-feature name"
             value={name}
-            onChange={e => setName(e.target.value)}
+            onChange={(e) => setName(e.target.value)}
             required
           />
         </div>
 
         {/* Description */}
         <div>
-          <label className="text-gray-600 text-sm mb-1 block font-medium">Description</label>
+          <label className="mb-1 block text-sm font-medium text-gray-600">Description</label>
           <textarea
-            className="w-full border-b border-b-gray-300 outline-none px-2 py-2 text-[1.1rem] bg-[rgba(0,0,0,0.03)] resize-none"
+            className="w-full resize-none border-b border-b-gray-300 bg-[rgba(0,0,0,0.03)] px-2 py-2 text-[1.1rem] outline-none"
             style={{ minHeight: 70 }}
             value={desc}
-            onChange={e => setDesc(e.target.value)}
+            onChange={(e) => setDesc(e.target.value)}
           />
         </div>
 
         {/* Razorpay Plan ID */}
         <div>
-          <label className="text-teal-700 text-sm font-semibold mb-1 block">
-            Razorpay Plan ID <span className="text-teal-400 font-bold">**</span>
+          <label className="mb-1 block text-sm font-semibold text-teal-700">
+            Razorpay Plan ID <span className="font-bold text-teal-400">**</span>
           </label>
           <input
-            className="w-full border-b border-b-gray-300 outline-none px-2 py-2 text-[1.11rem] font-medium bg-[rgba(0,0,0,0.03)]"
+            className="w-full border-b border-b-gray-300 bg-[rgba(0,0,0,0.03)] px-2 py-2 text-[1.11rem] font-medium outline-none"
             value={planId}
-            onChange={e => setPlanId(e.target.value)}
+            onChange={(e) => setPlanId(e.target.value)}
             required
           />
         </div>
 
         {/* Feature Routes section */}
         <div>
-          <div className="text-gray-700 font-semibold mb-2">Feature Routes</div>
+          <div className="mb-2 font-semibold text-gray-700">Feature Routes</div>
           {routes.map((route, idx) => (
-            <div className="flex gap-2 mb-2" key={idx}>
+            <div className="mb-2 flex gap-2" key={idx}>
               <input
-                className="border-b border-b-gray-300 outline-none px-2 py-2 flex-1 text-base bg-[rgba(0,0,0,0.02)]"
+                className="flex-1 border-b border-b-gray-300 bg-[rgba(0,0,0,0.02)] px-2 py-2 text-base outline-none"
                 value={route.path}
-                onChange={e => {
+                onChange={(e) => {
                   const cp = [...routes];
                   cp[idx].path = e.target.value;
                   setRoutes(cp);
@@ -196,9 +196,9 @@ export default function SubFeatureModal({
                 placeholder="Route ID (optional)"
               />
               <input
-                className="border-b border-b-gray-300 outline-none px-2 py-2 flex-1 text-base bg-[rgba(0,0,0,0.02)]"
+                className="flex-1 border-b border-b-gray-300 bg-[rgba(0,0,0,0.02)] px-2 py-2 text-base outline-none"
                 value={route.page}
-                onChange={e => {
+                onChange={(e) => {
                   const cp = [...routes];
                   cp[idx].page = e.target.value;
                   setRoutes(cp);
@@ -216,23 +216,23 @@ export default function SubFeatureModal({
           ))}
           <button
             type="button"
-            className="flex items-center text-teal-700 text-base font-medium gap-1 mt-2"
-            onClick={() => setRoutes([...routes, { path: "", page: "" }])}
+            className="mt-2 flex items-center gap-1 text-base font-medium text-teal-700"
+            onClick={() => setRoutes([...routes, { path: '', page: '' }])}
           >
-            <span className="font-bold text-xl">+</span>
+            <span className="text-xl font-bold">+</span>
             Add Route
           </button>
         </div>
 
         {/* Pages section */}
         <div>
-          <div className="text-gray-700 font-semibold mb-2">Pages</div>
+          <div className="mb-2 font-semibold text-gray-700">Pages</div>
           {pages.map((pg, idx) => (
-            <div key={idx} className="flex items-center gap-2 mb-2">
+            <div key={idx} className="mb-2 flex items-center gap-2">
               <input
-                className="border-b border-b-gray-300 outline-none px-2 py-2 flex-1 text-base bg-[rgba(0,0,0,0.02)]"
+                className="flex-1 border-b border-b-gray-300 bg-[rgba(0,0,0,0.02)] px-2 py-2 text-base outline-none"
                 value={pg}
-                onChange={e => {
+                onChange={(e) => {
                   const cp = [...pages];
                   cp[idx] = e.target.value;
                   setPages(cp);
@@ -250,10 +250,10 @@ export default function SubFeatureModal({
           ))}
           <button
             type="button"
-            className="flex items-center text-teal-700 text-base font-medium gap-1 mt-2"
-            onClick={() => setPages([...pages, ""])}
+            className="mt-2 flex items-center gap-1 text-base font-medium text-teal-700"
+            onClick={() => setPages([...pages, ''])}
           >
-            <span className="font-bold text-xl">+</span>
+            <span className="text-xl font-bold">+</span>
             Add Page
           </button>
         </div>
@@ -263,13 +263,13 @@ export default function SubFeatureModal({
           <button
             type="button"
             onClick={onClose}
-            className="bg-gray-100 text-gray-700 px-8 py-2 rounded-md border text-lg"
+            className="rounded-md border bg-gray-100 px-8 py-2 text-lg text-gray-700"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className={`px-8 py-2 rounded-md border text-white bg-teal-700 text-lg ${!isValid ? 'opacity-40 cursor-not-allowed' : ''}`}
+            className={`rounded-md border bg-teal-700 px-8 py-2 text-lg text-white ${!isValid ? 'cursor-not-allowed opacity-40' : ''}`}
             disabled={!isValid}
           >
             Create

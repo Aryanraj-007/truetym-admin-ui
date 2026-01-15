@@ -13,6 +13,7 @@
     "e2e:open": "cypress open",
     "e2e:chrome": "cypress run --browser chrome",
     "format": "prettier --check '**/*.{js,md,scss,ts,tsx}'",
+     "format-fix": "npm run format:write && npm run lint:fix",
     "format:write": "prettier --cache --write '**/*.{js,md,scss,ts,tsx}'",
     "format:staged": "prettier --list-different '**/*.{js,md,scss,ts,tsx}'",
     "prepare": "husky"
