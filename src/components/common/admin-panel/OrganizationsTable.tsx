@@ -319,72 +319,72 @@
 //   );
 // }
 
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import React, { useState } from 'react';
+import { Pencil, Trash2 } from 'lucide-react';
 
 // Dummy data with all required fields and "termType"
 const initialOrganizations = [
   {
-    name: "Tech Innovations Inc",
-    email: "contact@techinnovations.com",
+    name: 'Tech Innovations Inc',
+    email: 'contact@techinnovations.com',
     active: 50,
     total: 40,
-    subscription: "Pro",
-    onboardingDate: "15 Jan 2024, 10:30 AM",
-    renewDate: "15 Jan 2025, 10:30 AM",
-    status: "Active",
-    termType: "Weekly",
+    subscription: 'Pro',
+    onboardingDate: '15 Jan 2024, 10:30 AM',
+    renewDate: '15 Jan 2025, 10:30 AM',
+    status: 'Active',
+    termType: 'Weekly',
   },
   {
-    name: "Global Solutions Ltd",
-    email: "info@globalsolutions.com",
+    name: 'Global Solutions Ltd',
+    email: 'info@globalsolutions.com',
     active: 30,
     total: 25,
-    subscription: "Basic",
-    onboardingDate: "20 Nov 2023, 2:45 PM",
-    renewDate: "20 Nov 2024, 2:45 PM",
-    status: "Active",
-    termType: "Monthly",
+    subscription: 'Basic',
+    onboardingDate: '20 Nov 2023, 2:45 PM',
+    renewDate: '20 Nov 2024, 2:45 PM',
+    status: 'Active',
+    termType: 'Monthly',
   },
   {
-    name: "Creative Studios",
-    email: "hello@creativestudios.com",
+    name: 'Creative Studios',
+    email: 'hello@creativestudios.com',
     active: 15,
     total: 10,
-    subscription: "Pro",
-    onboardingDate: "10 Aug 2023, 9:15 AM",
-    renewDate: "10 Aug 2024, 9:15 AM",
-    status: "Inactive",
-    termType: "Weekly",
+    subscription: 'Pro',
+    onboardingDate: '10 Aug 2023, 9:15 AM',
+    renewDate: '10 Aug 2024, 9:15 AM',
+    status: 'Inactive',
+    termType: 'Weekly',
   },
   {
-    name: "DataCore Systems",
-    email: "admin@datacore.com",
+    name: 'DataCore Systems',
+    email: 'admin@datacore.com',
     active: 100,
     total: 85,
-    subscription: "Standard",
-    onboardingDate: "05 Mar 2024, 11:20 AM",
-    renewDate: "05 Mar 2025, 11:20 AM",
-    status: "Active",
-    termType: "Monthly",
+    subscription: 'Standard',
+    onboardingDate: '05 Mar 2024, 11:20 AM',
+    renewDate: '05 Mar 2025, 11:20 AM',
+    status: 'Active',
+    termType: 'Monthly',
   },
   {
-    name: "Marketing Masters",
-    email: "team@marketingmasters.com",
+    name: 'Marketing Masters',
+    email: 'team@marketingmasters.com',
     active: 20,
     total: 18,
-    subscription: "Basic",
-    onboardingDate: "28 Feb 2024, 4:00 PM",
-    renewDate: "28 Feb 2025, 4:00 PM",
-    status: "Active",
-    termType: "Weekly",
+    subscription: 'Basic',
+    onboardingDate: '28 Feb 2024, 4:00 PM',
+    renewDate: '28 Feb 2025, 4:00 PM',
+    status: 'Active',
+    termType: 'Weekly',
   },
 ];
 
-const subscriptionOptions = ["Pro", "Basic", "Standard"];
-const termTypeOptions = ["Weekly", "Monthly"];
+const subscriptionOptions = ['Pro', 'Basic', 'Standard'];
+const termTypeOptions = ['Weekly', 'Monthly'];
 
 export default function CustomersPage() {
   const [organizations, setOrganizations] = useState(initialOrganizations);
@@ -406,8 +406,8 @@ export default function CustomersPage() {
   };
 
   const handleDelete = (idx: number) => {
-    if (window.confirm("Are you sure you want to delete this organization?")) {
-      setOrganizations(orgs => orgs.filter((_, i) => i !== idx));
+    if (window.confirm('Are you sure you want to delete this organization?')) {
+      setOrganizations((orgs) => orgs.filter((_, i) => i !== idx));
     }
   };
 
@@ -415,54 +415,47 @@ export default function CustomersPage() {
     <div className="p-8">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Organizations</h1>
-        <p className="text-gray-500 mt-1">
-          Manage all organizations and their members
-        </p>
+        <p className="mt-1 text-gray-500">Manage all organizations and their members</p>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="border-b border-gray-200 bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                 Organisation Name
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                 Email
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                 Active/Total
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                 Subscription Plan
               </th>
               {/* Term Type Column */}
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                 Term Type
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                 Onboarding Date
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                 Renew Date
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-gray-200 bg-white">
             {organizations.map((org, idx) => (
-              <tr
-                key={org.email}
-                className="hover:bg-gray-50 transition-colors"
-              >
+              <tr key={org.email} className="transition-colors hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-semibold text-gray-900">
-                    {org.name}
-                  </div>
+                  <div className="text-sm font-semibold text-gray-900">{org.name}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-600">{org.email}</div>
@@ -475,12 +468,10 @@ export default function CustomersPage() {
                 <td className="px-6 py-4 whitespace-nowrap">
                   <select
                     value={org.subscription}
-                    onChange={e =>
-                      handleSubscriptionChange(idx, e.target.value)
-                    }
-                    className="text-sm border border-gray-300 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    onChange={(e) => handleSubscriptionChange(idx, e.target.value)}
+                    className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-transparent focus:ring-2 focus:ring-teal-500 focus:outline-none"
                   >
-                    {subscriptionOptions.map(plan => (
+                    {subscriptionOptions.map((plan) => (
                       <option key={plan} value={plan}>
                         {plan}
                       </option>
@@ -491,11 +482,11 @@ export default function CustomersPage() {
                 <td className="px-6 py-4 whitespace-nowrap">
                   <select
                     value={org.termType}
-                    onChange={e => handleTermTypeChange(idx, e.target.value)}
-                    className="text-sm border border-gray-300 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    onChange={(e) => handleTermTypeChange(idx, e.target.value)}
+                    className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none"
                     style={{ width: 110 }}
                   >
-                    {termTypeOptions.map(term => (
+                    {termTypeOptions.map((term) => (
                       <option key={term} value={term}>
                         {term}
                       </option>
@@ -503,21 +494,15 @@ export default function CustomersPage() {
                   </select>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-600">
-                    {org.onboardingDate}
-                  </div>
+                  <div className="text-sm text-gray-600">{org.onboardingDate}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-600">
-                    {org.renewDate}
-                  </div>
+                  <div className="text-sm text-gray-600">{org.renewDate}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span
-                    className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
-                      org.status === "Active"
-                        ? "bg-green-500 text-white"
-                        : "bg-red-500 text-white"
+                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                      org.status === 'Active' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
                     }`}
                   >
                     {org.status}
@@ -527,17 +512,17 @@ export default function CustomersPage() {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => handleEdit(idx)}
-                      className="text-gray-600 hover:text-gray-900 transition-colors"
+                      className="text-gray-600 transition-colors hover:text-gray-900"
                       title="Edit"
                     >
-                      <Pencil className="w-4 h-4" />
+                      <Pencil className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(idx)}
-                      className="text-gray-600 hover:text-red-600 transition-colors"
+                      className="text-gray-600 transition-colors hover:text-red-600"
                       title="Delete"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                 </td>

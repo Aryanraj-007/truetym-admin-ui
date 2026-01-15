@@ -36,14 +36,20 @@ context('Actions', () => {
   it('.focus() - focus on a DOM element', () => {
     // https://on.cypress.io/focus
     cy.get('.action-focus').focus();
-    cy.get('.action-focus').should('have.class', 'focus').prev().should('have.attr', 'style', 'color: orange;');
+    cy.get('.action-focus')
+      .should('have.class', 'focus')
+      .prev()
+      .should('have.attr', 'style', 'color: orange;');
   });
 
   it('.blur() - blur off a DOM element', () => {
     // https://on.cypress.io/blur
     cy.get('.action-blur').type('About to blur');
     cy.get('.action-blur').blur();
-    cy.get('.action-blur').should('have.class', 'error').prev().should('have.attr', 'style', 'color: red;');
+    cy.get('.action-blur')
+      .should('have.class', 'error')
+      .prev()
+      .should('have.attr', 'style', 'color: red;');
   });
 
   it('.clear() - clears an input or textarea element', () => {
@@ -206,7 +212,9 @@ context('Actions', () => {
       .should('have.value', 'fr-bananas');
 
     cy.get('.action-select-multiple').select(['fr-apples', 'fr-oranges', 'fr-bananas']);
-    cy.get('.action-select-multiple').invoke('val').should('deep.equal', ['fr-apples', 'fr-oranges', 'fr-bananas']);
+    cy.get('.action-select-multiple')
+      .invoke('val')
+      .should('deep.equal', ['fr-apples', 'fr-oranges', 'fr-bananas']);
 
     // assert the selected values include oranges
     cy.get('.action-select-multiple').invoke('val').should('include', 'fr-oranges');

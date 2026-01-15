@@ -1,7 +1,9 @@
-"use client";
-import FeatureList from "@/components/common/admin-panel/FeatureList";
-import FeatureDetail from "@/components/common/admin-panel/FeatureDetail";
-import { useState } from "react";
+'use client';
+
+import { useState } from 'react';
+
+import FeatureDetail from '@/components/common/admin-panel/FeatureDetail';
+import FeatureList from '@/components/common/admin-panel/FeatureList';
 
 interface SubFeature {
   name: string;
@@ -20,8 +22,8 @@ interface Feature {
 export default function FeatureManagementPage() {
   // Central feature state contains ALL features and their sub-features.
   const [features, setFeatures] = useState<Feature[]>([
-    { id: 1, name: "CATI", subFeaturesList: [] },
-    { id: 2, name: "Plan Features", subFeaturesList: [] },
+    { id: 1, name: 'CATI', subFeaturesList: [] },
+    { id: 2, name: 'Plan Features', subFeaturesList: [] },
   ]);
   const [selectedFeatureId, setSelectedFeatureId] = useState<number | null>(null);
 
@@ -34,52 +36,48 @@ export default function FeatureManagementPage() {
   }
 
   function handleDeleteFeature(id: number) {
-    setFeatures(features.filter(f => f.id !== id));
+    setFeatures(features.filter((f) => f.id !== id));
     if (selectedFeatureId === id) setSelectedFeatureId(null);
   }
 
   function handleAddSubFeature(sub: SubFeature) {
-    setFeatures(features =>
-      features.map(f =>
-        f.id === selectedFeatureId
-          ? { ...f, subFeaturesList: [...f.subFeaturesList, sub] }
-          : f
-      )
+    setFeatures((features) =>
+      features.map((f) =>
+        f.id === selectedFeatureId ? { ...f, subFeaturesList: [...f.subFeaturesList, sub] } : f,
+      ),
     );
   }
 
   function handleEditSubFeature(index: number, updated: SubFeature) {
-    setFeatures(features =>
-      features.map(f =>
+    setFeatures((features) =>
+      features.map((f) =>
         f.id === selectedFeatureId
           ? {
               ...f,
-              subFeaturesList: f.subFeaturesList.map((sf, i) =>
-                i === index ? updated : sf
-              ),
+              subFeaturesList: f.subFeaturesList.map((sf, i) => (i === index ? updated : sf)),
             }
-          : f
-      )
+          : f,
+      ),
     );
   }
 
   function handleDeleteSubFeature(index: number) {
-    setFeatures(features =>
-      features.map(f =>
+    setFeatures((features) =>
+      features.map((f) =>
         f.id === selectedFeatureId
           ? {
               ...f,
               subFeaturesList: f.subFeaturesList.filter((_, i) => i !== index),
             }
-          : f
-      )
+          : f,
+      ),
     );
   }
 
-  const selectedFeature = features.find(f => f.id === selectedFeatureId) || null;
+  const selectedFeature = features.find((f) => f.id === selectedFeatureId) || null;
 
   return (
-    <div className="flex flex-1 p-6 bg-gray-50 h-full">
+    <div className="flex h-full flex-1 bg-gray-50 p-6">
       <FeatureList
         features={features}
         selectedFeatureId={selectedFeatureId}
@@ -87,7 +85,7 @@ export default function FeatureManagementPage() {
         onCreate={handleCreateFeature}
         onDelete={handleDeleteFeature}
       />
-      <div className="w-px bg-gray-200 mx-6" />
+      <div className="mx-6 w-px bg-gray-200" />
       <FeatureDetail
         feature={selectedFeature}
         onAddSubFeature={handleAddSubFeature}

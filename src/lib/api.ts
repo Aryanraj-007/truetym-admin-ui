@@ -103,6 +103,30 @@ export interface SubscriptionsResponse {
   data: Subscription[];
 }
 
+export interface Employee {
+  id: string;
+  user_code: string;
+  employeeTypeId: number;
+  display_name: string;
+  email_id: string;
+  dial_code: string;
+  phone_number: string;
+  profile_image: string | null;
+  joining_date: string;
+  status: number;
+  job_title: string | null;
+  role_id: string;
+  role_type: number;
+  role_name: string;
+}
+
+export interface EmployeesResponse {
+  message: string[];
+  succeeded: boolean;
+  totalItems: string | number;
+  data: Employee[];
+}
+
 // Fetch organizations list
 export async function fetchOrganizations(
   pageNumber: number = 1,
@@ -197,4 +221,51 @@ export function getStatusLabel(status?: number): string {
   }
   // Status 102 seems to be Active, others are Inactive
   return status === 102 ? 'Active' : 'Inactive';
+}
+
+// Fetch employees for an organization
+export async function fetchEmployees(
+  organizationId: string,
+  pageNumber: number = 1,
+  pageSize: number = 10,
+  code: string = '',
+  name: string = '',
+  email: string = '',
+  fieldName: string = '',
+  orderBy: string = 'ASC',
+  status: string = '',
+): Promise<EmployeesResponse> {
+  try {
+    const params = new URLSearchParams({
+      code: code,
+      name: name,
+      email: email,
+      fieldName: fieldName,
+      orderBy: orderBy,
+      status: status,
+      pageNumber: pageNumber.toString(),
+      pageSize: pageSize.toString(),
+    });
+
+    const url = `${API_BASE_URL}/organisations/${organizationId}/employees?${params.toString()}`;
+    console.log('Fetching employees from:', url);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: getHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`API returned ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('fetchEmployees error:', errorMessage);
+    throw new Error(`Failed to fetch employees: ${errorMessage}`);
+  }
 }

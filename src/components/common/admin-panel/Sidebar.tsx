@@ -18,7 +18,7 @@ import {
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
-  { icon: Users, label: 'Customers', href: '/dashboard/customers' },
+  { icon: Users, label: 'Organisation', href: '/dashboard/customers' },
   { icon: Sliders, label: 'Feature Management', href: '/Feature' },
   { icon: Package, label: 'Plan Management', href: '/dashboard/plan' }, // lowercase
   { icon: TrendingDown, label: 'Churn & Retention', href: '/dashboard/churn' },

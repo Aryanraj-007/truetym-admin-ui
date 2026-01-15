@@ -3,12 +3,10 @@
 ## General Guidelines
 
 1. **Number of Files:**
-
    - Aim for 1-10 files per pull request
    - Absolute maximum: 20 files (excluding auto-generated files)
 
 2. **Lines of Code:**
-
    - Ideal: 200-400 lines of code changed
    - Maximum: 500-1000 lines of code changed
 
