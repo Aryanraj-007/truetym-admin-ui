@@ -138,6 +138,8 @@ interface OrganizationDetailProps {
     email: string;
     status?: string;
     role?: string;
+    subscription_start_date?: string;
+    subscription_closed_date?: string;
     employees: Employee[];
   };
 }
