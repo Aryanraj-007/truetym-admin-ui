@@ -127,6 +127,32 @@ export interface EmployeesResponse {
   data: Employee[];
 }
 
+// Fetch subscriptions/plans
+export async function fetchSubscriptions(): Promise<SubscriptionsResponse> {
+  try {
+    const url = `${API_BASE_URL}/dashborad/subscriptions`;
+    console.log('Fetching subscriptions from:', url);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: getHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`API returned ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('fetchSubscriptions error:', errorMessage);
+    throw new Error(`Failed to fetch subscriptions: ${errorMessage}`);
+  }
+}
+
 // Fetch organizations list
 export async function fetchOrganizations(
   pageNumber: number = 1,
@@ -171,11 +197,37 @@ export async function fetchOrganizations(
   }
 }
 
-// Fetch subscriptions
-export async function fetchSubscriptions(): Promise<SubscriptionsResponse> {
+// Fetch plan details by ID
+export interface PlanDetailsResponse {
+  message: string[];
+  succeeded: boolean;
+  data: {
+    id: string;
+    razorpay_plan_id: string;
+    title: string;
+    description: string;
+    plan_type: number;
+    featureList: Array<{
+      id: string;
+      title: string;
+      subFeatures: Array<{
+        id: string;
+        title: string;
+        featureRoutes: {
+          id: string | null;
+          pages: string[];
+          title: string;
+          routes: string[];
+        };
+      }>;
+    }>;
+  };
+}
+
+export async function fetchPlanDetails(planId: string): Promise<PlanDetailsResponse> {
   try {
-    const url = `${API_BASE_URL}/dashborad/subscriptions`;
-    console.log('Fetching subscriptions from:', url);
+    const url = `${API_BASE_URL}/master-data/plans/${planId}`;
+    console.log('Fetching plan details from:', url);
 
     const response = await fetch(url, {
       method: 'GET',
@@ -192,8 +244,8 @@ export async function fetchSubscriptions(): Promise<SubscriptionsResponse> {
     return data;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    console.error('fetchSubscriptions error:', errorMessage);
-    throw new Error(`Failed to fetch subscriptions: ${errorMessage}`);
+    console.error('fetchPlanDetails error:', errorMessage);
+    throw new Error(`Failed to fetch plan details: ${errorMessage}`);
   }
 }
 
@@ -267,5 +319,86 @@ export async function fetchEmployees(
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     console.error('fetchEmployees error:', errorMessage);
     throw new Error(`Failed to fetch employees: ${errorMessage}`);
+  }
+}
+
+// Features API Interfaces
+export interface FeatureRoute {
+  id: string | null;
+  title: string;
+  routes: string[];
+  pages: string[];
+}
+
+export interface APISubFeature {
+  id: string;
+  title: string;
+  descriptions: string | null;
+  featureRoutes: FeatureRoute;
+}
+
+export interface APIFeature {
+  id: string;
+  title: string;
+  descriptions: string;
+  subFeatures: APISubFeature[];
+}
+
+export interface FeaturesResponse {
+  message: string[];
+  succeeded: boolean;
+  data: APIFeature[];
+}
+
+// Fetch features from master data
+export async function fetchFeatures(): Promise<FeaturesResponse> {
+  try {
+    const url = `${API_BASE_URL}/master-data/features`;
+    console.log('Fetching features from:', url);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: getHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`API returned ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('fetchFeatures error:', errorMessage);
+    throw new Error(`Failed to fetch features: ${errorMessage}`);
+  }
+}
+
+export interface FeatureRouteResponse {
+  message: string[];
+  succeeded: boolean;
+  data: FeatureRoute[];
+}
+
+export async function fetchFeatureRoutes(): Promise<FeatureRouteResponse> {
+  try {
+    const url = `${API_BASE_URL}/master-data/features/routes`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: getHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API returned ${response.status}: ${errorText}`);
+    }
+
+    return response.json();
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new Error(`Failed to fetch feature routes: ${errorMessage}`);
   }
 }
