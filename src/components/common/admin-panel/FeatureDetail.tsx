@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 
+import EditFeatureModal from '@/components/common/admin-panel/EditFeatureModal';
 import SubFeatureModal from '@/components/common/admin-panel/SubFeatureModal';
 
 interface RouteObj {
@@ -15,6 +16,7 @@ interface SubFeature {
 }
 interface Feature {
   id: number;
+  apiId: string; // Store the API feature ID for delete operations
   name: string;
   desc?: string;
   subFeaturesList: SubFeature[];
@@ -24,6 +26,7 @@ interface FeatureDetailProps {
   onAddSubFeature: (sf: SubFeature) => void;
   onEditSubFeature: (idx: number, sf: SubFeature) => void;
   onDeleteSubFeature: (idx: number) => void;
+  onUpdateFeature?: () => void;
 }
 
 export default function FeatureDetail({
@@ -31,10 +34,12 @@ export default function FeatureDetail({
   onAddSubFeature,
   onEditSubFeature,
   onDeleteSubFeature,
+  onUpdateFeature,
 }: FeatureDetailProps) {
   const [showModal, setShowModal] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editIdx, setEditIdx] = useState<number | null>(null);
+  const [editFeatureModalOpen, setEditFeatureModalOpen] = useState(false);
 
   if (!feature)
     return (
@@ -50,6 +55,14 @@ export default function FeatureDetail({
         <div>
           <div className="text-lg font-bold">{feature.name}</div>
         </div>
+        <button
+          className="rounded p-2 text-gray-600 hover:bg-gray-100"
+          onClick={() => setEditFeatureModalOpen(true)}
+          title="Edit Feature"
+          aria-label="Edit Feature"
+        >
+          <Pencil size={20} />
+        </button>
       </div>
       <div className="mb-4">
         <h4 className="mb-2 font-semibold">Sub-features</h4>
@@ -117,6 +130,20 @@ export default function FeatureDetail({
           }}
           editMode
           initial={subFeatures[editIdx]}
+        />
+      )}
+
+      {/* Edit Feature Modal */}
+      {editFeatureModalOpen && (
+        <EditFeatureModal
+          featureId={feature.apiId}
+          featureName={feature.name}
+          featureDesc={feature.desc}
+          onClose={() => setEditFeatureModalOpen(false)}
+          onSuccess={() => {
+            setEditFeatureModalOpen(false);
+            onUpdateFeature?.();
+          }}
         />
       )}
     </div>

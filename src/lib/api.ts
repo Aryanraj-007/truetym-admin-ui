@@ -350,6 +350,22 @@ export interface FeaturesResponse {
   data: APIFeature[];
 }
 
+export interface CreateFeatureRequest {
+  title: string;
+  description?: string;
+}
+
+export interface CreateFeatureResponse {
+  message: string[];
+  succeeded: boolean;
+  data: {
+    id: string;
+    title: string;
+    description: string;
+    createdAt: number;
+  };
+}
+
 // Fetch features from master data
 export async function fetchFeatures(): Promise<FeaturesResponse> {
   try {
@@ -373,6 +389,110 @@ export async function fetchFeatures(): Promise<FeaturesResponse> {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     console.error('fetchFeatures error:', errorMessage);
     throw new Error(`Failed to fetch features: ${errorMessage}`);
+  }
+}
+
+// Create a new feature
+export async function createFeature(payload: CreateFeatureRequest): Promise<CreateFeatureResponse> {
+  try {
+    const url = `${API_BASE_URL}/master-data/create-feature`;
+    console.log('Creating feature at:', url);
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`API returned ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('createFeature error:', errorMessage);
+    throw new Error(`Failed to create feature: ${errorMessage}`);
+  }
+}
+
+export interface DeleteFeatureResponse {
+  message: string[];
+  succeeded: boolean;
+  data: Record<string, never>;
+}
+
+// Delete a feature by ID
+export async function deleteFeature(featureId: string): Promise<DeleteFeatureResponse> {
+  try {
+    const url = `${API_BASE_URL}/master-data/features/${featureId}`;
+    console.log('Deleting feature at:', url);
+
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`API returned ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('deleteFeature error:', errorMessage);
+    throw new Error(`Failed to delete feature: ${errorMessage}`);
+  }
+}
+
+export interface UpdateFeatureRequest {
+  title: string;
+  descriptions?: string;
+}
+
+export interface UpdateFeatureResponse {
+  message: string[];
+  succeeded: boolean;
+  data: {
+    id: string;
+    title: string;
+    descriptions: string;
+  };
+}
+
+// Update a feature by ID
+export async function updateFeature(
+  featureId: string,
+  payload: UpdateFeatureRequest,
+): Promise<UpdateFeatureResponse> {
+  try {
+    const url = `${API_BASE_URL}/master-data/features/${featureId}`;
+    console.log('Updating feature at:', url);
+
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`API returned ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('updateFeature error:', errorMessage);
+    throw new Error(`Failed to update feature: ${errorMessage}`);
   }
 }
 

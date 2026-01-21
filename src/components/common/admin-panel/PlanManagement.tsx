@@ -70,14 +70,19 @@ export default function PlanManagement() {
     dispatch(fetchSubscriptionsData());
   }, [dispatch]);
 
+  // Fetch plan details when subscriptions load or selectedPlanIdx changes
+  useEffect(() => {
+    if (subscriptions.data && subscriptions.data.length > 0) {
+      const selectedPlan = subscriptions.data[selectedPlanIdx];
+      if (selectedPlan) {
+        dispatch(fetchPlanDetailsData(selectedPlan.id));
+        setExpandedFeatures(new Set());
+      }
+    }
+  }, [selectedPlanIdx, subscriptions.data, dispatch]);
+
   const handlePlanClick = (idx: number) => {
     setSelectedPlanIdx(idx);
-    // Fetch plan details when a plan is clicked
-    const selectedPlan = subscriptions.data[idx];
-    if (selectedPlan) {
-      dispatch(fetchPlanDetailsData(selectedPlan.id));
-      setExpandedFeatures(new Set());
-    }
   };
 
   const toggleFeature = (featureId: string) => {
