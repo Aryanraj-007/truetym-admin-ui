@@ -112,9 +112,21 @@ export default function DashboardPage() {
     return null;
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    router.push('/signup');
+  const handleLogout = async () => {
+    try {
+      // Call logout API to clear cookies
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Clear localStorage
+      localStorage.removeItem('authToken');
+      sessionStorage.removeItem('signupUserId');
+      // Redirect to signup
+      router.push('/signup');
+    }
   };
 
   const statCards = [

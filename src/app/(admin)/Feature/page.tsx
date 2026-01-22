@@ -15,6 +15,7 @@ interface SubFeature {
 
 interface Feature {
   id: number;
+  apiId: string; // Store the API feature ID for delete operations
   name: string;
   desc?: string;
   subFeaturesList: SubFeature[];
@@ -24,6 +25,7 @@ interface Feature {
 const transformAPIToFeatures = (apiFeatures: APIFeature[]): Feature[] => {
   return apiFeatures.map((apiFeature, index) => ({
     id: index + 1, // Use index as numeric ID since API returns string IDs
+    apiId: apiFeature.id, // Store the API feature ID for delete operations
     name: apiFeature.title,
     desc: apiFeature.descriptions,
     subFeaturesList: apiFeature.subFeatures.map((apiSub) => ({
@@ -46,31 +48,32 @@ export default function FeatureManagementPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedFeatureId, setSelectedFeatureId] = useState<number | null>(null);
 
+  // Function to fetch and reload features from API
+  const loadFeatures = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetchFeatures();
+      if (response.succeeded && response.data) {
+        const transformedFeatures = transformAPIToFeatures(response.data);
+        setFeatures(transformedFeatures);
+        // Auto-select first feature
+        if (transformedFeatures.length > 0) {
+          setSelectedFeatureId(transformedFeatures[0].id);
+        }
+      } else {
+        throw new Error(response.message?.[0] || 'API response indicates failure');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load features');
+      console.error('Error loading features:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Fetch features from API on component mount
   useEffect(() => {
-    const loadFeatures = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await fetchFeatures();
-        if (response.succeeded && response.data) {
-          const transformedFeatures = transformAPIToFeatures(response.data);
-          setFeatures(transformedFeatures);
-          // Auto-select first feature
-          if (transformedFeatures.length > 0) {
-            setSelectedFeatureId(transformedFeatures[0].id);
-          }
-        } else {
-          throw new Error(response.message?.[0] || 'API response indicates failure');
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load features');
-        console.error('Error loading features:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadFeatures();
   }, []);
 
@@ -78,12 +81,15 @@ export default function FeatureManagementPage() {
     setSelectedFeatureId(feature.id);
   }
 
-  function handleCreateFeature(newFeature: { id: number; name: string; desc?: string }) {
-    setFeatures([...features, { ...newFeature, subFeaturesList: [] }]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  function handleCreateFeature(_newFeature: { id: number; name: string; desc?: string }) {
+    // Refetch features after creation
+    loadFeatures();
   }
 
   function handleDeleteFeature(id: number) {
-    setFeatures(features.filter((f) => f.id !== id));
+    // Refetch features after deletion
+    loadFeatures();
     if (selectedFeatureId === id) setSelectedFeatureId(null);
   }
 
@@ -169,6 +175,7 @@ export default function FeatureManagementPage() {
         onAddSubFeature={handleAddSubFeature}
         onEditSubFeature={handleEditSubFeature}
         onDeleteSubFeature={handleDeleteSubFeature}
+        onUpdateFeature={loadFeatures}
       />
     </div>
   );

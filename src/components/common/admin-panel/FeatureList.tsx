@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 
+import { deleteFeature } from '@/lib/api';
+import ConfirmationModal from '@/components/common/admin-panel/ConfirmationModal';
 import FeatureModal from '@/components/common/admin-panel/FeatureModal';
 
 interface SubFeature {
@@ -11,6 +13,7 @@ interface SubFeature {
 }
 interface Feature {
   id: number;
+  apiId: string; // Store the API feature ID for delete operations
   name: string;
   desc?: string;
   subFeaturesList: SubFeature[];
@@ -31,6 +34,41 @@ export default function FeatureList({
   onDelete,
 }: FeatureListProps) {
   const [showModal, setShowModal] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    featureId: number;
+    apiId: string;
+    featureName: string;
+  } | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const handleDeleteClick = (
+    featureId: number,
+    apiId: string,
+    featureName: string,
+    e: React.MouseEvent,
+  ) => {
+    e.stopPropagation();
+    setDeleteConfirmation({ featureId, apiId, featureName });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmation) return;
+
+    setDeleteLoading(true);
+    try {
+      // Use the API ID directly from the feature
+      await deleteFeature(deleteConfirmation.apiId);
+      onDelete(deleteConfirmation.featureId);
+      setDeleteConfirmation(null);
+    } catch (error) {
+      console.error('Error deleting feature:', error);
+      alert(
+        'Failed to delete feature: ' + (error instanceof Error ? error.message : 'Unknown error'),
+      );
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
 
   return (
     <div className="flex w-72 flex-col rounded-lg bg-white p-4 shadow">
@@ -54,10 +92,7 @@ export default function FeatureList({
               <div className="font-medium">{feature.name}</div>
               <button
                 className="rounded px-2 py-1 text-red-500 hover:bg-red-100"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(feature.id);
-                }}
+                onClick={(e) => handleDeleteClick(feature.id, feature.apiId, feature.name, e)}
                 title="Delete Feature"
                 aria-label="Delete Feature"
               >
@@ -77,6 +112,17 @@ export default function FeatureList({
             onCreate({ ...n, id: Date.now() });
             setShowModal(false);
           }}
+        />
+      )}
+      {deleteConfirmation && (
+        <ConfirmationModal
+          title="Delete Feature"
+          message={`This will delete feature "${deleteConfirmation.featureName}" and all its sub-features`}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setDeleteConfirmation(null)}
+          confirmText="Ok"
+          cancelText="Cancel"
+          isLoading={deleteLoading}
         />
       )}
     </div>
