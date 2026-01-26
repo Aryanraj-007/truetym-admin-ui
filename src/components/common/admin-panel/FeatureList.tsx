@@ -4,13 +4,8 @@ import { Trash2 } from 'lucide-react';
 import { deleteFeature } from '@/lib/api';
 import ConfirmationModal from '@/components/common/admin-panel/ConfirmationModal';
 import FeatureModal from '@/components/common/admin-panel/FeatureModal';
+import { SubFeature } from '@/components/common/admin-panel/SubFeatureModal';
 
-interface SubFeature {
-  name: string;
-  desc: string;
-  planId: string;
-  routes: { path: string; page: string }[];
-}
 interface Feature {
   id: number;
   apiId: string; // Store the API feature ID for delete operations

@@ -2,16 +2,16 @@
 
 import { useEffect, useState } from 'react';
 
-import { APIFeature, fetchFeatures } from '@/lib/api';
+import {
+  APIFeature,
+  createSubFeature,
+  deleteSubFeature,
+  fetchFeatures,
+  updateSubFeature,
+} from '@/lib/api';
 import FeatureDetail from '@/components/common/admin-panel/FeatureDetail';
 import FeatureList from '@/components/common/admin-panel/FeatureList';
-
-interface SubFeature {
-  name: string;
-  desc: string;
-  planId: string;
-  routes: { path: string; page: string }[];
-}
+import { SubFeature } from '@/components/common/admin-panel/SubFeatureModal';
 
 interface Feature {
   id: number;
@@ -29,15 +29,10 @@ const transformAPIToFeatures = (apiFeatures: APIFeature[]): Feature[] => {
     name: apiFeature.title,
     desc: apiFeature.descriptions,
     subFeaturesList: apiFeature.subFeatures.map((apiSub) => ({
-      name: apiSub.title,
-      desc: apiSub.descriptions || '',
-      planId: apiSub.id,
-      routes: apiSub.featureRoutes
-        ? apiSub.featureRoutes.pages.map((page, idx) => ({
-            path: apiSub.featureRoutes.routes[idx] || '',
-            page: page,
-          }))
-        : [],
+      id: apiSub.id, // Store the sub-feature ID
+      title: apiSub.title,
+      descriptions: apiSub.descriptions || undefined,
+      featureRoutes: apiSub.featureRoutes || undefined,
     })),
   }));
 };
@@ -94,37 +89,79 @@ export default function FeatureManagementPage() {
   }
 
   function handleAddSubFeature(sub: SubFeature) {
-    setFeatures((features) =>
-      features.map((f) =>
-        f.id === selectedFeatureId ? { ...f, subFeaturesList: [...f.subFeaturesList, sub] } : f,
-      ),
-    );
+    const selectedFeature = features.find((f) => f.id === selectedFeatureId);
+    if (!selectedFeature) return;
+
+    // Call API to create sub-feature
+    (async () => {
+      try {
+        const response = await createSubFeature(selectedFeature.apiId, sub);
+        if (response.succeeded) {
+          // Reload features to get the updated list from the server
+          loadFeatures();
+        } else {
+          console.error('Failed to create sub-feature:', response.message);
+          alert(`Failed to create sub-feature: ${response.message?.[0] || 'Unknown error'}`);
+        }
+      } catch (error) {
+        console.error('Error creating sub-feature:', error);
+        alert(
+          `Error creating sub-feature: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
+      }
+    })();
   }
 
-  function handleEditSubFeature(index: number, updated: SubFeature) {
-    setFeatures((features) =>
-      features.map((f) =>
-        f.id === selectedFeatureId
-          ? {
-              ...f,
-              subFeaturesList: f.subFeaturesList.map((sf, i) => (i === index ? updated : sf)),
-            }
-          : f,
-      ),
-    );
+  function handleEditSubFeature(index: number, subFeatureId: string, updated: SubFeature) {
+    const selectedFeature = features.find((f) => f.id === selectedFeatureId);
+    if (!selectedFeature) return;
+
+    // Call API to update sub-feature
+    (async () => {
+      try {
+        const response = await updateSubFeature(selectedFeature.apiId, subFeatureId, updated);
+        if (response.succeeded) {
+          // Reload features to get the updated list from the server
+          loadFeatures();
+        } else {
+          console.error('Failed to update sub-feature:', response.message);
+          alert(`Failed to update sub-feature: ${response.message?.[0] || 'Unknown error'}`);
+        }
+      } catch (error) {
+        console.error('Error updating sub-feature:', error);
+        alert(
+          `Error updating sub-feature: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
+      }
+    })();
   }
 
   function handleDeleteSubFeature(index: number) {
-    setFeatures((features) =>
-      features.map((f) =>
-        f.id === selectedFeatureId
-          ? {
-              ...f,
-              subFeaturesList: f.subFeaturesList.filter((_, i) => i !== index),
-            }
-          : f,
-      ),
-    );
+    const selectedFeature = features.find((f) => f.id === selectedFeatureId);
+    const subFeatureToDelete = selectedFeature?.subFeaturesList[index];
+
+    if (!selectedFeature || !subFeatureToDelete?.id) return;
+
+    const subFeatureId = subFeatureToDelete.id;
+
+    // Call API to delete sub-feature
+    (async () => {
+      try {
+        const response = await deleteSubFeature(selectedFeature.apiId, subFeatureId);
+        if (response.succeeded) {
+          // Reload features to get the updated list from the server
+          loadFeatures();
+        } else {
+          console.error('Failed to delete sub-feature:', response.message);
+          alert(`Failed to delete sub-feature: ${response.message?.[0] || 'Unknown error'}`);
+        }
+      } catch (error) {
+        console.error('Error deleting sub-feature:', error);
+        alert(
+          `Error deleting sub-feature: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
+      }
+    })();
   }
 
   const selectedFeature = features.find((f) => f.id === selectedFeatureId) || null;

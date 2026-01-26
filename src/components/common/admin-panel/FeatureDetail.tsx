@@ -1,19 +1,10 @@
 import { useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 
+import ConfirmationModal from '@/components/common/admin-panel/ConfirmationModal';
 import EditFeatureModal from '@/components/common/admin-panel/EditFeatureModal';
-import SubFeatureModal from '@/components/common/admin-panel/SubFeatureModal';
+import SubFeatureModal, { SubFeature } from '@/components/common/admin-panel/SubFeatureModal';
 
-interface RouteObj {
-  path: string;
-  page: string;
-}
-interface SubFeature {
-  name: string;
-  desc: string;
-  planId: string;
-  routes: RouteObj[];
-}
 interface Feature {
   id: number;
   apiId: string; // Store the API feature ID for delete operations
@@ -24,7 +15,7 @@ interface Feature {
 interface FeatureDetailProps {
   feature: Feature | null;
   onAddSubFeature: (sf: SubFeature) => void;
-  onEditSubFeature: (idx: number, sf: SubFeature) => void;
+  onEditSubFeature: (idx: number, subFeatureId: string, sf: SubFeature) => void;
   onDeleteSubFeature: (idx: number) => void;
   onUpdateFeature?: () => void;
 }
@@ -40,6 +31,10 @@ export default function FeatureDetail({
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editIdx, setEditIdx] = useState<number | null>(null);
   const [editFeatureModalOpen, setEditFeatureModalOpen] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    subFeatureIdx: number;
+    subFeatureName: string;
+  } | null>(null);
 
   if (!feature)
     return (
@@ -76,7 +71,7 @@ export default function FeatureDetail({
               className="flex items-center gap-2 rounded border bg-white px-3 py-2 transition hover:bg-teal-50"
             >
               <span className="rounded-full bg-gray-100 px-3 py-1 text-xs">{idx + 1}</span>
-              <span className="flex-1">{sf.name}</span>
+              <span className="flex-1">{sf.title}</span>
               <button
                 className="rounded p-1 text-gray-600 hover:bg-gray-100"
                 onClick={() => {
@@ -89,7 +84,9 @@ export default function FeatureDetail({
               </button>
               <button
                 className="rounded p-1 text-red-500 hover:bg-red-100"
-                onClick={() => onDeleteSubFeature(idx)}
+                onClick={() =>
+                  setDeleteConfirmation({ subFeatureIdx: idx, subFeatureName: sf.title })
+                }
                 title="Delete"
               >
                 <Trash2 size={18} />
@@ -124,7 +121,8 @@ export default function FeatureDetail({
             setEditIdx(null);
           }}
           onSave={(sf) => {
-            onEditSubFeature(editIdx, sf);
+            const subFeatureId = subFeatures[editIdx!]?.id || '';
+            onEditSubFeature(editIdx!, subFeatureId, sf);
             setEditModalOpen(false);
             setEditIdx(null);
           }}
@@ -144,6 +142,21 @@ export default function FeatureDetail({
             setEditFeatureModalOpen(false);
             onUpdateFeature?.();
           }}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmation && (
+        <ConfirmationModal
+          title="Delete Sub-Feature"
+          message={`Are you sure you want to delete sub-feature "${deleteConfirmation.subFeatureName}"?`}
+          onConfirm={async () => {
+            onDeleteSubFeature(deleteConfirmation.subFeatureIdx);
+            setDeleteConfirmation(null);
+          }}
+          onCancel={() => setDeleteConfirmation(null)}
+          confirmText="Ok"
+          cancelText="Cancel"
         />
       )}
     </div>

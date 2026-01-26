@@ -103,6 +103,27 @@ export interface SubscriptionsResponse {
   data: Subscription[];
 }
 
+export interface CreateCustomPlanRequest {
+  planName: string;
+  planDescription?: string;
+  billingAmount: number;
+  billingFrequency: number;
+  billingPeriod: 'monthly' | 'yearly';
+}
+
+export interface CreateCustomPlanResponse {
+  message: string[];
+  succeeded: boolean;
+  data: {
+    id: string;
+    planName: string;
+    planDescription?: string;
+    billingAmount: number;
+    billingFrequency: number;
+    createdAt: number;
+  };
+}
+
 export interface Employee {
   id: string;
   user_code: string;
@@ -153,6 +174,139 @@ export async function fetchSubscriptions(): Promise<SubscriptionsResponse> {
   }
 }
 
+// Create custom plan
+export async function createCustomPlan(
+  planData: CreateCustomPlanRequest,
+): Promise<CreateCustomPlanResponse> {
+  try {
+    const url = `${API_BASE_URL}/master-data/plans/create-custom-plan`;
+    console.log('Creating custom plan:', url);
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(planData),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`API returned ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('createCustomPlan error:', errorMessage);
+    throw new Error(`Failed to create custom plan: ${errorMessage}`);
+  }
+}
+
+// Delete custom plan
+export async function deleteCustomPlan(planId: string): Promise<CreateCustomPlanResponse> {
+  try {
+    const url = `${API_BASE_URL}/master-data/plans/custom-plan/${planId}`;
+    console.log('Deleting custom plan:', url);
+
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`API returned ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('deleteCustomPlan error:', errorMessage);
+    throw new Error(`Failed to delete custom plan: ${errorMessage}`);
+  }
+}
+
+// Get plan details by ID
+export interface PlanDetailsResponse {
+  message: string[];
+  succeeded: boolean;
+  data: {
+    id: string;
+    razorpay_plan_id: string;
+    title: string;
+    description: string | null;
+    plan_type: number;
+    featureList: Array<{
+      id: string;
+      title: string;
+      subFeatures: Array<{
+        id: string;
+        title: string;
+        featureRoutes: {
+          id: string | null;
+          pages: string[] | null;
+          title: string;
+          routes: string[] | null;
+        };
+      }>;
+    }>;
+  };
+}
+
+export async function getPlanDetails(planId: string): Promise<PlanDetailsResponse> {
+  try {
+    const url = `${API_BASE_URL}/master-data/plans/${planId}`;
+    console.log('Fetching plan details:', url);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: getHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`API returned ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('getPlanDetails error:', errorMessage);
+    throw new Error(`Failed to fetch plan details: ${errorMessage}`);
+  }
+}
+
+// Delete system plan
+export async function deleteSystemPlan(planId: string): Promise<CreateCustomPlanResponse> {
+  try {
+    const url = `${API_BASE_URL}/master-data/plans/system-plan/${planId}`;
+    console.log('Deleting system plan:', url);
+
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`API returned ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('deleteSystemPlan error:', errorMessage);
+    throw new Error(`Failed to delete system plan: ${errorMessage}`);
+  }
+}
+
 // Fetch organizations list
 export async function fetchOrganizations(
   pageNumber: number = 1,
@@ -195,33 +349,6 @@ export async function fetchOrganizations(
     console.error('fetchOrganizations error:', errorMessage);
     throw new Error(`Failed to fetch organizations: ${errorMessage}`);
   }
-}
-
-// Fetch plan details by ID
-export interface PlanDetailsResponse {
-  message: string[];
-  succeeded: boolean;
-  data: {
-    id: string;
-    razorpay_plan_id: string;
-    title: string;
-    description: string;
-    plan_type: number;
-    featureList: Array<{
-      id: string;
-      title: string;
-      subFeatures: Array<{
-        id: string;
-        title: string;
-        featureRoutes: {
-          id: string | null;
-          pages: string[];
-          title: string;
-          routes: string[];
-        };
-      }>;
-    }>;
-  };
 }
 
 export async function fetchPlanDetails(planId: string): Promise<PlanDetailsResponse> {
@@ -324,17 +451,17 @@ export async function fetchEmployees(
 
 // Features API Interfaces
 export interface FeatureRoute {
-  id: string | null;
-  title: string;
-  routes: string[];
-  pages: string[];
+  id?: string | null;
+  title?: string;
+  routes?: string[];
+  pages?: string[];
 }
 
 export interface APISubFeature {
   id: string;
   title: string;
   descriptions: string | null;
-  featureRoutes: FeatureRoute;
+  featureRoutes?: FeatureRoute;
 }
 
 export interface APIFeature {
@@ -493,6 +620,148 @@ export async function updateFeature(
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     console.error('updateFeature error:', errorMessage);
     throw new Error(`Failed to update feature: ${errorMessage}`);
+  }
+}
+
+// Sub-Feature API Interfaces and Functions
+export interface CreateSubFeatureRequest {
+  title: string;
+  descriptions?: string;
+  razorpayPlanId?: string;
+  featureRoutes?: {
+    id?: string | null;
+    title?: string;
+    routes?: string[];
+    pages?: string[];
+  };
+}
+
+export interface CreateSubFeatureResponse {
+  message: string[];
+  succeeded: boolean;
+  data: {
+    id: string;
+    title: string;
+    featureId: string;
+    createdAt: number;
+  };
+}
+
+// Create a new sub-feature under a parent feature
+export async function createSubFeature(
+  featureId: string,
+  payload: CreateSubFeatureRequest,
+): Promise<CreateSubFeatureResponse> {
+  try {
+    const url = `${API_BASE_URL}/master-data/features/${featureId}/subfeatures`;
+    console.log('Creating sub-feature at:', url);
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`API returned ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('createSubFeature error:', errorMessage);
+    throw new Error(`Failed to create sub-feature: ${errorMessage}`);
+  }
+}
+
+// Update an existing sub-feature
+export interface UpdateSubFeatureRequest {
+  title?: string;
+  descriptions?: string;
+  razorpayPlanId?: string;
+  featureRoutes?: {
+    id?: string | null;
+    title?: string;
+    routes?: string[];
+    pages?: string[];
+  };
+}
+
+export interface UpdateSubFeatureResponse {
+  message: string[];
+  succeeded: boolean;
+  data: {
+    id: string;
+    title: string;
+    featureId: string;
+  };
+}
+
+export async function updateSubFeature(
+  featureId: string,
+  subFeatureId: string,
+  payload: UpdateSubFeatureRequest,
+): Promise<UpdateSubFeatureResponse> {
+  try {
+    const url = `${API_BASE_URL}/master-data/features/${featureId}/subfeatures/${subFeatureId}`;
+    console.log('Updating sub-feature at:', url);
+
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`API returned ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('updateSubFeature error:', errorMessage);
+    throw new Error(`Failed to update sub-feature: ${errorMessage}`);
+  }
+}
+
+// Delete a sub-feature
+export interface DeleteSubFeatureResponse {
+  message: string[];
+  succeeded: boolean;
+  data: Record<string, never>;
+}
+
+export async function deleteSubFeature(
+  featureId: string,
+  subFeatureId: string,
+): Promise<DeleteSubFeatureResponse> {
+  try {
+    const url = `${API_BASE_URL}/master-data/features/${featureId}/subfeatures/${subFeatureId}`;
+    console.log('Deleting sub-feature at:', url);
+
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`API returned ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('deleteSubFeature error:', errorMessage);
+    throw new Error(`Failed to delete sub-feature: ${errorMessage}`);
   }
 }
 
