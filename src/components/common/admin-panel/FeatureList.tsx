@@ -66,7 +66,7 @@ export default function FeatureList({
   };
 
   return (
-    <div className="flex w-72 flex-col rounded-lg bg-white p-4 shadow">
+    <div className="flex w-[600px] flex-col rounded-lg bg-white p-4 shadow">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-xl font-semibold">Features</h2>
         <button
@@ -76,7 +76,7 @@ export default function FeatureList({
           + Create Feature
         </button>
       </div>
-      <div className="flex-1 space-y-3 overflow-y-auto">
+      <div className="scrollbar scrollbar-thumb-gray-400 scrollbar-track-gray-100 scrollbar-w-2 flex-1 space-y-3 overflow-y-auto">
         {features.map((feature) => (
           <div
             key={feature.id}

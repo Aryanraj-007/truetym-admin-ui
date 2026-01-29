@@ -5,7 +5,15 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchPlanDetailsData, fetchSubscriptionsData } from '@/store/thunks/subscriptionThunks';
 import { ChevronDown, Edit, Trash2, X } from 'lucide-react';
 
-import { createCustomPlan, deleteCustomPlan, deleteSystemPlan, getPlanDetails } from '@/lib/api';
+import {
+  createCustomPlan,
+  deleteCustomPlan,
+  deleteFeatureFromCustomPlan,
+  deleteFeatureFromSystemPlan,
+  deleteSystemPlan,
+  getPlanDetails,
+} from '@/lib/api';
+import FeatureMappingModal from '@/components/common/admin-panel/FeatureMappingModal';
 
 // const availableFeatures = [
 //   'Core HR Solution',
@@ -50,7 +58,7 @@ function OrgsPopover({
         {customers.length === 0 && <li className="text-sm text-gray-400">No organizations</li>}
         {customers.map((customer) => (
           <li key={customer.id} className="flex items-center gap-2 py-1 text-sm text-gray-700">
-            <span className="inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-teal-500"></span>
+            <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-teal-500"></span>
             <span>{customer.name}</span>
           </li>
         ))}
@@ -63,6 +71,7 @@ export default function PlanManagement() {
   const dispatch = useAppDispatch();
   const { subscriptions, planDetails } = useAppSelector((state) => state.app);
   const [showPlanModal, setShowPlanModal] = useState(false);
+  const [showFeatureMappingModal, setShowFeatureMappingModal] = useState(false);
   const [selectedPlanIdx, setSelectedPlanIdx] = useState<number>(0);
   const [orgPopoverIdx, setOrgPopoverIdx] = useState<number | null>(null);
   const [expandedFeatures, setExpandedFeatures] = useState<Set<string>>(new Set());
@@ -85,6 +94,15 @@ export default function PlanManagement() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLoadingPlanDetails, setIsLoadingPlanDetails] = useState(false);
+
+  // Delete feature confirmation state
+  const [featureToDelete, setFeatureToDelete] = useState<{
+    id: string;
+    title: string;
+    planId: string;
+    planType?: number;
+  } | null>(null);
+  const [isDeletingFeature, setIsDeletingFeature] = useState(false);
 
   // Fetch subscriptions on component mount
   useEffect(() => {
@@ -243,6 +261,59 @@ export default function PlanManagement() {
     }
   };
 
+  const handleDeleteFeatureClick = async (
+    featureId: string,
+    featureTitle: string,
+    planId: string,
+  ) => {
+    try {
+      const response = await getPlanDetails(planId);
+      if (response.succeeded) {
+        setFeatureToDelete({
+          id: featureId,
+          title: featureTitle,
+          planId: planId,
+          planType: response.data.plan_type,
+        });
+      } else {
+        console.error('Failed to fetch plan details:', response.message);
+      }
+    } catch (error) {
+      console.error('Error fetching plan details:', error);
+    }
+  };
+
+  const handleDeleteFeature = async () => {
+    if (!featureToDelete) return;
+
+    setIsDeletingFeature(true);
+    try {
+      let response;
+      // plan_type: 100 = system plan, 101 = custom plan
+      const isSystemPlan = featureToDelete.planType === 100;
+
+      if (isSystemPlan) {
+        response = await deleteFeatureFromSystemPlan(featureToDelete.planId, featureToDelete.id);
+      } else {
+        response = await deleteFeatureFromCustomPlan(featureToDelete.planId, featureToDelete.id);
+      }
+
+      if (response.succeeded) {
+        // Refresh plan details after successful deletion
+        if (selectedPlan) {
+          dispatch(fetchPlanDetailsData(selectedPlan.id));
+        }
+        setFeatureToDelete(null);
+      } else {
+        console.error('Delete failed:', response.message);
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+    } finally {
+      setIsDeletingFeature(false);
+    }
+  };
+
   const plans = subscriptions.data;
   const selectedPlan = plans[selectedPlanIdx];
 
@@ -284,7 +355,7 @@ export default function PlanManagement() {
           )}
         </div>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex max-h-[calc(100vh-200px)] flex-col gap-4 overflow-y-auto">
           {plans.length === 0 ? (
             <div className="py-12 text-center">
               <p className="mb-4 text-gray-600">No plans available</p>
@@ -309,7 +380,7 @@ export default function PlanManagement() {
                       handleDeletePlanClick(plan.id, plan.title);
                     }}
                     disabled={isLoadingPlanDetails}
-                    className="flex-shrink-0 p-1 text-red-600 transition-colors hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="shrink-0 p-1 text-red-600 transition-colors hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                     title="Delete plan"
                   >
                     <Trash2 className="h-5 w-5" />
@@ -375,7 +446,7 @@ export default function PlanManagement() {
             </div>
 
             <button
-              onClick={() => setShowPlanModal(true)}
+              onClick={() => setShowFeatureMappingModal(true)}
               className="w-full rounded-lg border-2 border-cyan-300 bg-cyan-100/40 px-5 py-3 text-base font-semibold text-teal-700 transition-colors hover:bg-cyan-100/60"
             >
               Add new feature →
@@ -414,14 +485,18 @@ export default function PlanManagement() {
                       <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                         <button
                           type="button"
-                          className="p-1 text-gray-400 transition-colors hover:text-teal-600"
+                          onClick={() => setShowFeatureMappingModal(true)}
+                          className="p-1 text-teal-600 transition-colors hover:text-teal-700"
                         >
                           <Edit className="h-4 w-4" />
                         </button>
 
                         <button
                           type="button"
-                          className="p-1 text-gray-400 transition-colors hover:text-red-600"
+                          onClick={() =>
+                            handleDeleteFeatureClick(feature.id, feature.title, selectedPlan.id)
+                          }
+                          className="p-1 text-red-600 transition-colors hover:text-red-700"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -450,10 +525,27 @@ export default function PlanManagement() {
           </>
         )}
       </section>
+
+      {/* Feature Mapping Modal */}
+      {selectedPlan && (
+        <FeatureMappingModal
+          isOpen={showFeatureMappingModal}
+          onClose={() => setShowFeatureMappingModal(false)}
+          planId={selectedPlan.id}
+          razorpayPlanId={selectedPlan.razorpay_plan_id}
+          planTitle={selectedPlan.title}
+          currentMappedFeatures={planDetails.data?.featureList}
+          onSuccess={() => {
+            // Refresh plan details after successful mapping
+            dispatch(fetchPlanDetailsData(selectedPlan.id));
+          }}
+        />
+      )}
+
       {/* Modal for Adding Plan */}
       {showPlanModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-sm">
-          <div className="w-[500px] rounded-2xl border border-gray-200 bg-white p-8 shadow-2xl">
+          <div className="w-125 rounded-2xl border border-gray-200 bg-white p-8 shadow-2xl">
             <div className="mb-6 flex items-center justify-between">
               <h3 className="text-xl font-bold text-gray-900">Add custom plan</h3>
               <button
@@ -565,7 +657,7 @@ export default function PlanManagement() {
       {/* Delete Confirmation Modal */}
       {planToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-sm">
-          <div className="w-[400px] rounded-2xl border border-gray-200 bg-white p-8 shadow-2xl">
+          <div className="w-100 rounded-2xl border border-gray-200 bg-white p-8 shadow-2xl">
             <div className="mb-6 flex items-center justify-between">
               <h3 className="text-xl font-bold text-gray-900">Delete Plan</h3>
               <button
@@ -607,6 +699,51 @@ export default function PlanManagement() {
                 className="rounded-lg bg-red-600 px-5 py-3 font-semibold text-white transition-all hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Feature Confirmation Modal */}
+      {featureToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-sm">
+          <div className="w-100 rounded-2xl border border-gray-200 bg-white p-8 shadow-2xl">
+            <div className="mb-6 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-gray-900">Delete Feature</h3>
+              <button
+                onClick={() => setFeatureToDelete(null)}
+                disabled={isDeletingFeature}
+                className="text-gray-500 transition-colors hover:text-gray-700 disabled:cursor-not-allowed"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <p className="mb-4 text-gray-900">
+                Are you sure you want to remove this feature from the plan?
+              </p>
+              <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                <p className="text-sm font-semibold text-gray-800">{featureToDelete.title}</p>
+              </div>
+              <p className="text-sm font-semibold text-red-600">⚠️ This action cannot be undone.</p>
+            </div>
+
+            <div className="flex justify-end gap-4">
+              <button
+                className="rounded-lg border border-gray-300 px-5 py-3 font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => setFeatureToDelete(null)}
+                disabled={isDeletingFeature}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteFeature}
+                disabled={isDeletingFeature}
+                className="rounded-lg bg-red-600 px-5 py-3 font-semibold text-white transition-all hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isDeletingFeature ? 'Deleting...' : 'Delete'}
               </button>
             </div>
           </div>

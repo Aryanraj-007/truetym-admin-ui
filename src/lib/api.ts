@@ -452,6 +452,7 @@ export async function fetchEmployees(
 // Features API Interfaces
 export interface FeatureRoute {
   id?: string | null;
+  featureId?: string;
   title?: string;
   routes?: string[];
   pages?: string[];
@@ -789,5 +790,113 @@ export async function fetchFeatureRoutes(): Promise<FeatureRouteResponse> {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     throw new Error(`Failed to fetch feature routes: ${errorMessage}`);
+  }
+}
+
+export interface MapFeaturesRequest {
+  subcriptionId: string;
+  razorpayPlanId: string;
+  features: Array<{
+    id: string;
+    subfeatureIds: string[];
+  }>;
+}
+
+export interface MapFeaturesResponse {
+  message: string[];
+  succeeded: boolean;
+  data: {
+    mappedFeatures: number;
+    totalSubfeatures: number;
+  };
+}
+
+export async function mapFeaturesTopPlan(
+  payload: MapFeaturesRequest,
+): Promise<MapFeaturesResponse> {
+  try {
+    const url = `${API_BASE_URL}/master-data/features/mapping`;
+    console.log('Mapping features to plan:', url);
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`API returned ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('mapFeaturesTopPlan error:', errorMessage);
+    throw new Error(`Failed to map features: ${errorMessage}`);
+  }
+}
+
+export interface DeleteFeatureFromPlanResponse {
+  message: string[];
+  succeeded: boolean;
+  data: Record<string, never>;
+}
+
+export async function deleteFeatureFromCustomPlan(
+  planId: string,
+  featureId: string,
+): Promise<DeleteFeatureFromPlanResponse> {
+  try {
+    const url = `${API_BASE_URL}/master-data/plans/custom/${planId}/features/${featureId}`;
+    console.log('Deleting feature from custom plan:', url);
+
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`API returned ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('deleteFeatureFromCustomPlan error:', errorMessage);
+    throw new Error(`Failed to delete feature from custom plan: ${errorMessage}`);
+  }
+}
+
+export async function deleteFeatureFromSystemPlan(
+  planId: string,
+  featureId: string,
+): Promise<DeleteFeatureFromPlanResponse> {
+  try {
+    const url = `${API_BASE_URL}/master-data/plans/system/${planId}/features/${featureId}`;
+    console.log('Deleting feature from system plan:', url);
+
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`API returned ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('deleteFeatureFromSystemPlan error:', errorMessage);
+    throw new Error(`Failed to delete feature from system plan: ${errorMessage}`);
   }
 }
