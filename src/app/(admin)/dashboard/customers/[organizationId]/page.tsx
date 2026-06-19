@@ -150,7 +150,13 @@ export default function OrganizationPage() {
               organization={{
                 name: organization.org_name,
                 email: organization.email ?? '-',
-                status: organization.status === 102 ? 'Active' : 'Inactive',
+                status:
+                  organization.status === 102 ||
+                  organization.status === 110 ||
+                  organization.status === 111 ||
+                  organization.status === 105
+                    ? 'Active'
+                    : 'Inactive',
                 role: organization.planTitle,
                 subscription_start_date: formatDateTime(organization.subscription_start_date),
                 subscription_closed_date: formatDateTime(organization.subscription_closed_date),

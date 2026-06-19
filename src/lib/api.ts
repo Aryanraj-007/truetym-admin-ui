@@ -398,8 +398,8 @@ export function getStatusLabel(status?: number): string {
   if (status === undefined || status === null) {
     return 'Inactive';
   }
-  // Status 102 seems to be Active, others are Inactive
-  return status === 102 ? 'Active' : 'Inactive';
+
+  return [102, 105, 110, 111].includes(status) ? 'Active' : 'Inactive';
 }
 
 // Fetch employees for an organization

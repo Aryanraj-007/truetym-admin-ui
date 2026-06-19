@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Trash2 } from 'lucide-react';
 
 import { fetchOrganizations, getStatusLabel, Organization } from '@/lib/api';
 
@@ -14,7 +15,7 @@ const formatSubscriptionDate = (value?: string | number | null): string => {
   if (!Number.isFinite(seconds) || seconds <= 0) return '-';
 
   const date = new Date(seconds * 1000);
-  if (isNaN(date.getTime())) return '-';
+  if (Number.isNaN(date.getTime())) return '-';
 
   return date.toLocaleDateString('en-GB', {
     day: '2-digit',
@@ -101,6 +102,12 @@ export default function CustomersPage() {
     router.push(`/client-details/employees?id=${id}`);
   };
 
+  // NEW: open offboarding for an inactive org
+  const handleOffboard = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    router.push(`/offboarding/${id}?type=org`);
+  };
+
   const handleFilterChange = (key: string, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
     setPageNumber(1);
@@ -131,7 +138,7 @@ export default function CustomersPage() {
       <h1 className="text-3xl font-bold text-gray-900">Organizations</h1>
       <p className="mb-4 text-gray-500">Manage all organizations and their members</p>
 
-      <div className="flex-grow">
+      <div className="grow">
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <input
             type="text"
@@ -185,6 +192,7 @@ export default function CustomersPage() {
                     'Joining Date',
                     'Renewal Date',
                     'Status',
+                    'Actions',
                   ].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-sm font-medium text-gray-600">
                       {h}
@@ -196,7 +204,7 @@ export default function CustomersPage() {
               <tbody className="divide-y">
                 {filteredOrganizations.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-500">
+                    <td colSpan={8} className="px-4 py-10 text-center text-sm text-gray-500">
                       No record found.
                     </td>
                   </tr>
@@ -209,6 +217,7 @@ export default function CustomersPage() {
                       <tr key={org.id} className="hover:bg-gray-50">
                         <td className="px-4 py-3 text-base font-semibold">
                           <span
+                            role="none"
                             title={org.org_name}
                             onClick={() => handleRowClick(org.id)}
                             className="cursor-pointer hover:text-teal-600"
@@ -241,6 +250,26 @@ export default function CustomersPage() {
                           >
                             {statusLabel}
                           </span>
+                        </td>
+
+                        {/* NEW: offboard action — only for inactive orgs */}
+                        <td className="px-4 py-3">
+                          {isActive ? (
+                            <span
+                              title="Only inactive organisations can be offboarded"
+                              className="text-xs text-gray-300"
+                            >
+                              —
+                            </span>
+                          ) : (
+                            <button
+                              onClick={(e) => handleOffboard(e, org.id)}
+                              title="Offboard (permanent delete)"
+                              className="rounded p-1.5 text-red-600 transition-colors hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
                         </td>
                       </tr>
                     );

@@ -1,6 +1,5 @@
 import { API_BASE_URL, getHeaders } from '@/lib/api';
 
-/** Pull a useful message out of a NestJS JSON error body, else fall back. */
 async function extractError(response: Response): Promise<string> {
   const errorText = await response.text();
   console.error('API Error Response:', errorText);
@@ -64,6 +63,32 @@ export interface StreamHandlers {
   onStep: (step: DeleteStep) => void;
   onDone?: () => void;
   onError?: (message: string) => void;
+}
+
+export interface PickItem {
+  id: string;
+  name: string;
+  subtitle: string;
+  isActive: boolean;
+  statusLabel: string;
+}
+
+// ===========================================================================
+// 0. SEARCH USERS — for the name-based picker (orgs reuse fetchOrganizations)
+// ===========================================================================
+export async function searchUsers(q: string): Promise<PickItem[]> {
+  try {
+    const url = `${API_BASE_URL}/admin/offboarding/search-users?q=${encodeURIComponent(q)}`;
+    const response = await fetch(url, { method: 'GET', headers: getHeaders() });
+    if (!response.ok) {
+      throw new Error(await extractError(response));
+    }
+    return (await response.json()) as PickItem[];
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('searchUsers error:', errorMessage);
+    throw new Error(`Failed to search users: ${errorMessage}`);
+  }
 }
 
 // ===========================================================================
