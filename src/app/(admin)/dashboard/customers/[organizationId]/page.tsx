@@ -5,29 +5,20 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 
 import { fetchSubscriptions, Organization, Subscription } from '@/lib/api';
-import OrganizationDetail from '@/components/common/admin-panel/OrganizationDetail';
+import { fetchEmployeeList } from '@/lib/employee';
+import OrganizationDetail, { Employee } from '@/components/common/admin-panel/OrganizationDetail';
 
 interface OrganizationWithSubscription extends Organization {
   name?: string;
   email?: string;
-  employees?: Array<{
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-    status: string;
-    avatar: string;
-  }>;
+  employees?: Employee[];
 }
 
 const formatDateTime = (date?: number | string | null) => {
   if (!date) return '-';
-
   const timestamp = typeof date === 'number' && date < 1e12 ? date * 1000 : date;
-
   const d = new Date(timestamp);
-  if (isNaN(d.getTime())) return '-';
-
+  if (Number.isNaN(d.getTime())) return '-';
   return d.toLocaleString('en-US', {
     month: 'short',
     day: '2-digit',
@@ -37,6 +28,12 @@ const formatDateTime = (date?: number | string | null) => {
     second: '2-digit',
     hour12: true,
   });
+};
+
+const initialsOf = (name?: string) => {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || '?';
 };
 
 export default function OrganizationPage() {
@@ -55,56 +52,58 @@ export default function OrganizationPage() {
         setLoading(true);
         setError(null);
 
+        // Subscriptions (unchanged)
         try {
           const subsResponse = await fetchSubscriptions();
           setSubscriptions(subsResponse.data);
         } catch {
-          const fallbackResponse = await fetchSubscriptions();
-          setSubscriptions(fallbackResponse.data);
+          /* ignore */
         }
 
-        const mockOrganization: OrganizationWithSubscription = {
+        // REAL employees for this org
+        let employees: Employee[] = [];
+        try {
+          const empRes = await fetchEmployeeList(organizationId, {
+            pageNumber: 1,
+            pageSize: 100,
+          });
+          if (empRes.succeeded) {
+            employees = empRes.data.map((e) => ({
+              id: e.id,
+              name: e.display_name,
+              email: e.email_id,
+              role: e.role_name ?? '-',
+              status: e.status, // numeric UserStatusEnum
+              is_active: e.is_active,
+              deleted: e.deleted,
+              profile_image: e.profile_image,
+              avatar: initialsOf(e.display_name),
+            }));
+          }
+        } catch (e) {
+          console.error('Employee fetch failed:', e);
+        }
+
+        // Org header — still partly placeholder until the single-org GET exists.
+        const org: OrganizationWithSubscription = {
           id: organizationId,
           org_name: `Organization ${organizationId.substring(0, 8)}`,
-          employee_count: 10,
+          employee_count: employees.length,
           created_at: new Date().toISOString(),
           planTitle: 'Pro',
           planAmount: 149,
           status: 102,
           total_licences: 20,
-
           subscription_date: Math.floor(Date.now() / 1000),
           subscription_start_date: Math.floor(Date.now() / 1000),
           subscription_closed_date: Math.floor((Date.now() + 365 * 24 * 60 * 60 * 1000) / 1000),
-
-          pricing: {
-            userCount: 10,
-            monthlyCost: 1490,
-            yearlyCost: 0,
-          },
+          pricing: { userCount: employees.length, monthlyCost: 1490, yearlyCost: 0 },
           isSeatAvailable: true,
           website: 'example.com',
-          employees: [
-            {
-              id: '1',
-              name: 'John Doe',
-              email: 'john@example.com',
-              role: 'Admin',
-              status: 'Active',
-              avatar: 'JD',
-            },
-            {
-              id: '2',
-              name: 'Jane Smith',
-              email: 'jane@example.com',
-              role: 'Manager',
-              status: 'Active',
-              avatar: 'JS',
-            },
-          ],
+          employees,
         };
 
-        setOrganization(mockOrganization);
+        setOrganization(org);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load data');
         console.error('Error loading data:', err);
@@ -119,7 +118,6 @@ export default function OrganizationPage() {
   return (
     <div className="w-full overflow-hidden bg-gray-50">
       <div className="w-full px-6 py-8">
-        {/* Back Button */}
         <button
           onClick={() => router.push('/dashboard/customers')}
           className="mb-6 flex items-center gap-2 rounded px-2 py-1 text-sm text-gray-600 transition-colors hover:text-teal-600 focus:ring-2 focus:ring-teal-500 focus:outline-none"
@@ -128,30 +126,27 @@ export default function OrganizationPage() {
           Back to Organizations
         </button>
 
-        {/* Error */}
         {error && (
           <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             {error}
           </div>
         )}
 
-        {/* Loading */}
         {loading && (
           <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-700">
             Loading organization data...
           </div>
         )}
 
-        {/* Main Content */}
         {!loading && organization && (
           <div className="space-y-6">
-            {/* Organization Detail */}
             <OrganizationDetail
               organization={{
                 name: organization.org_name,
                 email: organization.email ?? '-',
                 status:
                   organization.status === 102 ||
+                  organization.status === 103 ||
                   organization.status === 110 ||
                   organization.status === 111 ||
                   organization.status === 105
@@ -164,11 +159,9 @@ export default function OrganizationPage() {
               }}
             />
 
-            {/* Subscriptions */}
             {subscriptions.length > 0 && (
               <div className="w-full rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
                 <h2 className="mb-4 text-lg font-semibold text-gray-900">Subscription Plans</h2>
-
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {subscriptions.map((sub) => (
                     <div
@@ -201,16 +194,6 @@ export default function OrganizationPage() {
                 </div>
               </div>
             )}
-
-            {/* Info */}
-            <div className="w-full rounded-lg border border-blue-200 bg-blue-50 p-4">
-              <p className="text-sm font-semibold text-blue-700">📌 TODO</p>
-              <ul className="mt-3 ml-5 list-disc space-y-1 text-xs text-blue-600">
-                <li>Create real API for organization details</li>
-                <li>Remove mock data once backend is ready</li>
-                <li>Normalize timestamps to milliseconds</li>
-              </ul>
-            </div>
           </div>
         )}
       </div>

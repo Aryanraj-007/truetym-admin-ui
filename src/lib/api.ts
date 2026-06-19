@@ -399,7 +399,7 @@ export function getStatusLabel(status?: number): string {
     return 'Inactive';
   }
 
-  return [102, 105, 110, 111].includes(status) ? 'Active' : 'Inactive';
+  return [102, 103, 105, 110, 111].includes(status) ? 'Active' : 'Inactive';
 }
 
 // Fetch employees for an organization
@@ -413,6 +413,7 @@ export async function fetchEmployees(
   fieldName: string = '',
   orderBy: string = 'ASC',
   status: string = '',
+  p0: any = 0,
 ): Promise<EmployeesResponse> {
   try {
     const params = new URLSearchParams({
@@ -424,6 +425,7 @@ export async function fetchEmployees(
       status: status,
       pageNumber: pageNumber.toString(),
       pageSize: pageSize.toString(),
+      delete: p0,
     });
 
     const url = `${API_BASE_URL}/organisations/${organizationId}/employees?${params.toString()}`;
