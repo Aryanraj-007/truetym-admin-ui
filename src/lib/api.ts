@@ -1,6 +1,6 @@
 // API configuration and service functions
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'https://hrms-dev-admin-backend.truetym.com';
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_TRUETYM_ADMIN_URL || 'https://hrms-dev-admin-backend.truetym.com';
 
 // Get authentication token from localStorage or env
 export function getAuthToken(): string | null {
@@ -26,7 +26,7 @@ export function getAuthToken(): string | null {
 }
 
 // Build headers with authentication
-function getHeaders(): HeadersInit {
+export function getHeaders(): HeadersInit {
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     Accept: 'application/json',
@@ -398,8 +398,8 @@ export function getStatusLabel(status?: number): string {
   if (status === undefined || status === null) {
     return 'Inactive';
   }
-  // Status 102 seems to be Active, others are Inactive
-  return status === 102 ? 'Active' : 'Inactive';
+
+  return [102, 103, 105, 110, 111].includes(status) ? 'Active' : 'Inactive';
 }
 
 // Fetch employees for an organization
@@ -413,6 +413,7 @@ export async function fetchEmployees(
   fieldName: string = '',
   orderBy: string = 'ASC',
   status: string = '',
+  p0: any = 0,
 ): Promise<EmployeesResponse> {
   try {
     const params = new URLSearchParams({
@@ -424,6 +425,7 @@ export async function fetchEmployees(
       status: status,
       pageNumber: pageNumber.toString(),
       pageSize: pageSize.toString(),
+      delete: p0,
     });
 
     const url = `${API_BASE_URL}/organisations/${organizationId}/employees?${params.toString()}`;

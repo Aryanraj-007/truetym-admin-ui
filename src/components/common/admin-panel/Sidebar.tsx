@@ -19,9 +19,9 @@ import {
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
   { icon: Users, label: 'Organisation', href: '/dashboard/customers' },
-  { icon: Sliders, label: 'Feature Management', href: '/Feature' },
+  { icon: Sliders, label: 'Feature Management', href: '/features' },
   { icon: Package, label: 'Plan Management', href: '/dashboard/plan' }, // lowercase
-  { icon: TrendingDown, label: 'Churn & Retention', href: '/dashboard/churn' },
+  { icon: TrendingDown, label: 'Offboarding', href: '/offboarding' },
   { icon: Megaphone, label: 'Marketing', href: '/dashboard/marketing' },
   { icon: FileText, label: 'Financials', href: '/dashboard/financials' },
   { icon: Package, label: 'Product Usage', href: '/dashboard/product-usage' },
@@ -35,7 +35,7 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed top-0 left-0 flex h-screen w-[280px] flex-col border-r border-gray-200 bg-white">
+    <aside className="fixed top-0 left-0 flex h-screen w-70 flex-col border-r border-gray-200 bg-white">
       {/* Logo */}
       <div className="border-b border-gray-200 p-5">
         <div className="flex items-center gap-3">
