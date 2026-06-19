@@ -1,6 +1,6 @@
 // API configuration and service functions
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'https://hrms-dev-admin-backend.truetym.com';
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_TRUETYM_ADMIN_URL || 'https://hrms-dev-admin-backend.truetym.com';
 
 // Get authentication token from localStorage or env
 export function getAuthToken(): string | null {
@@ -26,7 +26,7 @@ export function getAuthToken(): string | null {
 }
 
 // Build headers with authentication
-function getHeaders(): HeadersInit {
+export function getHeaders(): HeadersInit {
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     Accept: 'application/json',
