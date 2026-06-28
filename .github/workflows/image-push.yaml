@@ -1,0 +1,115 @@
+name: Dcker Build , Trivy Scan & Image Push to ECR
+
+on:
+  workflow_call:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  IMAGE_NAME: truetym-adminv2
+  AWS_REGION: us-east-1
+
+jobs:
+  build-scan-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ---------------- ENV + IMAGE REPO SELECTION ----------------
+      - name: Set environment variables
+        run: |
+          case "${GITHUB_REF_NAME}" in
+            tt-dev)
+              ENV=dev
+              IMAGE_TAG=devlatest
+              IMAGE_REPO=tt-reg
+              # Create .env from DEV_ENV secret
+              printf "%s" "${{ secrets.DEV_ENV }}" > .env
+              ;;
+            tt-uat)
+              ENV=uat
+              IMAGE_TAG=uatlatest
+              IMAGE_REPO=tt-reg
+              # Create .env from UAT_ENV secret
+              printf "%s" "${{ secrets.UAT_ENV }}" > .env
+              ;;
+            tt-prod)
+              ENV=prod
+              IMAGE_TAG=prodlatest
+              IMAGE_REPO=prod-tt-reg
+              # Create .env from PROD_ENV secret
+              printf "%s" "${{ secrets.PROD_ENV }}" > .env
+              ;;
+          esac
+
+          echo "ENV=$ENV" >> $GITHUB_ENV
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+          echo "IMAGE_REPO=$IMAGE_REPO" >> $GITHUB_ENV
+          echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+          # Verify .env exists without printing contents
+          test -s .env && echo ".env created" || (echo "Failed to create .env" && exit 1)
+
+      # ---------------- OIDC AUTH ----------------
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-cicd
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          aws-region: ${{ env.AWS_REGION }}
+
+      # ---------------- DOCKER LOGIN ----------------
+      - name: Login to Amazon ECR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ECR_REGISTRY }}
+
+      # ---------------- BUILD SETUP ----------------
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ---------------- BUILD IMAGE ----------------
+      - name: Build Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          load: true
+          tags: |
+            ${{ secrets.ECR_REGISTRY }}/${{ env.IMAGE_REPO }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            ${{ secrets.ECR_REGISTRY }}/${{ env.IMAGE_REPO }}/${{ env.IMAGE_NAME }}:${{ env.SHORT_SHA }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ---------------- TRIVY SCAN ----------------
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sudo sh -s -- -b /usr/local/bin
+      # ---------------- TRIVY SCAN ----------------
+      - name: Trivy Image Scan
+        run: |
+          trivy image \
+            --severity HIGH,CRITICAL \
+            --scanners vuln \
+            --format json \
+            --output trivy-report.json \
+            ${{ secrets.ECR_REGISTRY }}/${{ env.IMAGE_REPO }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+
+          trivy convert --format table trivy-report.json
+
+      - name: Upload Trivy Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-scan-report-${{ env.IMAGE_TAG }}
+          path: trivy-report.json
+          retention-days: 3
+
+      # ---------------- PUSH IMAGE ----------------
+      - name: Push Image
+        run: |
+          docker push --all-tags \
+          ${{ secrets.ECR_REGISTRY }}/${{ env.IMAGE_REPO }}/${{ env.IMAGE_NAME }}
