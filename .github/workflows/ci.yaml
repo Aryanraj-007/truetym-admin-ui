@@ -1,0 +1,208 @@
+# =============
+# CI WORKFLOW 
+# =============
+name: CI Checks
+
+on:
+  push:
+    branches: [ tt-dev, tt-uat, tt-prod ]
+  pull_request:
+    branches: [ "tt-dev", "tt-uat", "tt-prod" ]
+    types: [opened, synchronize, reopened]
+    
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+  id-token: write
+
+env:
+  NODE_ENV: test
+  NODE_VERSION: "20"
+
+jobs:
+  # ──────────────────────────────────────────────────────────
+  # JOB: setup
+  # ──────────────────────────────────────────────────────────
+  setup:
+    name: Setup & Cache
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Cache node_modules
+        id: cache-nodemodules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-
+
+      - name: Install dependencies
+        if: steps.cache-nodemodules.outputs.cache-hit != 'true'
+        run: npm ci --ignore-scripts --prefer-offline --no-audit --legacy-peer-deps
+        env:
+          HUSKY: 0
+
+  # ──────────────────────────────────────────────────────────
+  # JOB: lint
+  # ──────────────────────────────────────────────────────────
+  lint:
+    name: Lint Check
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Restore node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Run Lint
+        run: npm run lint
+
+  # ──────────────────────────────────────────────────────────
+  # JOB: test
+  # ──────────────────────────────────────────────────────────
+  test:
+    name: Run Tests
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Restore node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Run Tests
+        run: npm run test
+        env:
+          CI: true
+
+  # ──────────────────────────────────────────────────────────
+  # JOB: build
+  # ──────────────────────────────────────────────────────────
+  build:
+    name: Build & Artifact
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Restore node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Run Build
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ github.sha }}
+          path: .next/
+          retention-days: 3
+
+  # ──────────────────────────────────────────────────────────
+  # JOB: security
+  # ──────────────────────────────────────────────────────────
+  security:
+    name: Security Audit
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Restore node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
+
+      - name: npm audit
+        run: npm audit --audit-level=high --omit=dev
+        continue-on-error: true
+
+      - name: Run TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --only-verified
+        continue-on-error: true
+
+  # ──────────────────────────────────────────────────────────
+  # JOB: ci-gate
+  # ──────────────────────────────────────────────────────────
+  ci-gate:
+    name: CI Gate
+    runs-on: ubuntu-latest
+    needs: [lint, test, build, security]
+    if: always()
+    steps:
+      - name: Check all jobs passed
+        run: |
+          if [[ "${{ needs.lint.result }}" != "success" ||
+                "${{ needs.test.result }}" != "success" ||
+                "${{ needs.build.result }}" != "success" ||
+                "${{ needs.security.result }}" != "success" ]]; then
+            echo "One or more required CI jobs failed."
+            exit 1
+          fi
+          echo "All required CI jobs passed."
+
+  # ──────────────────────────────────────────────────────────
+  # JOB: trigger image push
+  # ──────────────────────────────────────────────────────────
+  call-image-push:
+    name: Call Action 
+    needs: [ci-gate]
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/image-push.yaml
+    secrets: inherit
