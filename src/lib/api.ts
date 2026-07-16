@@ -1,3 +1,12 @@
+import { EmployeesResponse } from '@/types/employee';
+import { OrganizationListResponse } from '@/types/organisation';
+import {
+  CreateCustomPlanRequest,
+  CreateCustomPlanResponse,
+  PlanDetailsResponse,
+  SubscriptionsResponse,
+} from '@/types/subscription';
+
 // API configuration and service functions
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_TRUETYM_ADMIN_URL || 'https://hrms-dev-admin-backend.truetym.com';
@@ -42,110 +51,6 @@ export function getHeaders(): HeadersInit {
   }
 
   return headers;
-}
-
-// Types for API responses
-export interface Organization {
-  id: string;
-  org_name: string;
-  industry_id?: string;
-  website?: string;
-  employee_slab_id?: string;
-  employee_count: number;
-  created_at: string;
-  subscription_id?: string;
-  razorpay_subscription_id?: string;
-  planTitle?: string;
-  planAmount: number;
-  subscription_type?: number;
-  status?: number;
-  total_licences: number;
-  subscription_date: string | number;
-  subscription_start_date: string | number;
-  subscription_closed_date: string | number;
-  trial_end_at?: string | null;
-  pricing: {
-    userCount: number;
-    monthlyCost: number;
-    yearlyCost: number;
-  };
-  isSeatAvailable: boolean;
-}
-
-export interface Subscription {
-  id: string;
-  razorpay_plan_id: string;
-  plan_type: number;
-  title: string;
-  currency: string;
-  description?: string;
-  amount: number;
-  created_at: string;
-  typeId: string;
-  totalFeatures: number;
-  totalCustomers: number;
-  customerDetails: Array<{
-    id: string;
-    name: string;
-  }>;
-}
-
-export interface OrganizationListResponse {
-  message: string[];
-  succeeded: boolean;
-  totalItems: number;
-  data: Organization[];
-}
-
-export interface SubscriptionsResponse {
-  message: string[];
-  succeeded: boolean;
-  data: Subscription[];
-}
-
-export interface CreateCustomPlanRequest {
-  planName: string;
-  planDescription?: string;
-  billingAmount: number;
-  billingFrequency: number;
-  billingPeriod: 'monthly' | 'yearly';
-}
-
-export interface CreateCustomPlanResponse {
-  message: string[];
-  succeeded: boolean;
-  data: {
-    id: string;
-    planName: string;
-    planDescription?: string;
-    billingAmount: number;
-    billingFrequency: number;
-    createdAt: number;
-  };
-}
-
-export interface Employee {
-  id: string;
-  user_code: string;
-  employeeTypeId: number;
-  display_name: string;
-  email_id: string;
-  dial_code: string;
-  phone_number: string;
-  profile_image: string | null;
-  joining_date: string;
-  status: number;
-  job_title: string | null;
-  role_id: string;
-  role_type: number;
-  role_name: string;
-}
-
-export interface EmployeesResponse {
-  message: string[];
-  succeeded: boolean;
-  totalItems: string | number;
-  data: Employee[];
 }
 
 // Fetch subscriptions/plans
@@ -227,33 +132,6 @@ export async function deleteCustomPlan(planId: string): Promise<CreateCustomPlan
     console.error('deleteCustomPlan error:', errorMessage);
     throw new Error(`Failed to delete custom plan: ${errorMessage}`);
   }
-}
-
-// Get plan details by ID
-export interface PlanDetailsResponse {
-  message: string[];
-  succeeded: boolean;
-  data: {
-    id: string;
-    razorpay_plan_id: string;
-    title: string;
-    description: string | null;
-    plan_type: number;
-    featureList: Array<{
-      id: string;
-      title: string;
-      subFeatures: Array<{
-        id: string;
-        title: string;
-        featureRoutes: {
-          id: string | null;
-          pages: string[] | null;
-          title: string;
-          routes: string[] | null;
-        };
-      }>;
-    }>;
-  };
 }
 
 export async function getPlanDetails(planId: string): Promise<PlanDetailsResponse> {

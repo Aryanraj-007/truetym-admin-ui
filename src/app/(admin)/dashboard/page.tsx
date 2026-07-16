@@ -90,7 +90,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const authToken = localStorage.getItem('authToken');
     if (!authToken) {
-      router.push('/signup');
+      router.push('/login');
     } else {
       setIsAuthenticated(true);
     }
@@ -123,9 +123,9 @@ export default function DashboardPage() {
     } finally {
       // Clear localStorage
       localStorage.removeItem('authToken');
-      sessionStorage.removeItem('signupUserId');
-      // Redirect to signup
-      router.push('/signup');
+      sessionStorage.removeItem('loginUserId');
+      // Redirect to login
+      router.push('/login');
     }
   };
 

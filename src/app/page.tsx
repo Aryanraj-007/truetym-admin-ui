@@ -12,7 +12,7 @@ export default function Home() {
     if (authToken) {
       router.push('/dashboard');
     } else {
-      router.push('/signup');
+      router.push('/login');
     }
   }, [router]);
 
