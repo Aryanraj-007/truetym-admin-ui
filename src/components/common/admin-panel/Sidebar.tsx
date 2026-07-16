@@ -27,7 +27,7 @@ const menuItems = [
   { icon: Package, label: 'Product Usage', href: '/dashboard/product-usage' },
   { icon: Headphones, label: 'Support', href: '/dashboard/support' },
   { icon: TrendingUp, label: 'Forecasting', href: '/dashboard/forecasting' },
-  { icon: UsersRound, label: 'Team', href: '/dashboard/team' },
+  { icon: UsersRound, label: 'User Management', href: '/users' },
   { icon: Settings, label: 'Settings', href: '/dashboard/settings' },
 ];
 

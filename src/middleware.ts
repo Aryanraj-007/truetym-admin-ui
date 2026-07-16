@@ -5,7 +5,7 @@ export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Allow signup/login page without auth
-  if (pathname === '/signup' || pathname === '/') {
+  if (pathname === '/login' || pathname === '/') {
     return NextResponse.next();
   }
 
@@ -16,7 +16,7 @@ export function middleware(request: NextRequest) {
 
     // If no token or OTP not verified, redirect to signup
     if (!authToken || otpVerified !== 'true') {
-      const signupUrl = new URL('/signup', request.url);
+      const signupUrl = new URL('/login', request.url);
       const response = NextResponse.redirect(signupUrl);
       // Clear any existing auth state
       response.cookies.delete('authToken');
