@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 
-import { fetchSubscriptions, Organization, Subscription } from '@/lib/api';
+import { Organization } from '@/types/organisation';
+import { Subscription } from '@/types/subscription';
+import { fetchSubscriptions } from '@/lib/api';
 import { fetchEmployeeList } from '@/lib/employee';
 import OrganizationDetail, { Employee } from '@/components/common/admin-panel/OrganizationDetail';
 

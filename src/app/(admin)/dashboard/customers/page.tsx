@@ -4,7 +4,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Trash2 } from 'lucide-react';
 
-import { fetchOrganizations, getStatusLabel, Organization } from '@/lib/api';
+import { Organization } from '@/types/organisation';
+import { fetchOrganizations, getStatusLabel } from '@/lib/api';
 
 const subscriptionOptions = ['Pro', 'Basic', 'Standard', 'Core'];
 

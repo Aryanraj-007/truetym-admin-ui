@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Trash2 } from 'lucide-react';
 
-import { Employee, EmployeesResponse, fetchEmployees } from '@/lib/api';
+import { Employee, EmployeesResponse } from '@/types/employee';
+import { fetchEmployees } from '@/lib/api';
 import {
   canOffboardEmployee,
   getEmployeeStatusBadgeClass,
