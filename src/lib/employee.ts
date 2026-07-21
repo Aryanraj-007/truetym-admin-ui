@@ -1,4 +1,5 @@
-import { API_BASE_URL, getHeaders } from '@/lib/api';
+import { getHeaders } from '@/lib/api';
+import { API_BASE_URL } from '@/lib/endpoint';
 
 // ---------------------------------------------------------------------------
 // UserStatusEnum (matches your backend constant)

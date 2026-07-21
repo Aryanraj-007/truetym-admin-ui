@@ -6,10 +6,7 @@ import {
   PlanDetailsResponse,
   SubscriptionsResponse,
 } from '@/types/subscription';
-
-// API configuration and service functions
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_TRUETYM_ADMIN_URL || 'https://hrms-dev-admin-backend.truetym.com';
+import { API_BASE_URL } from '@/lib/endpoint';
 
 // Get authentication token from localStorage or env
 export function getAuthToken(): string | null {
@@ -207,7 +204,6 @@ export async function fetchOrganizations(
     });
 
     const url = `${API_BASE_URL}/organisations?${params.toString()}`;
-    console.log('Fetching organizations from:', url);
 
     const response = await fetch(url, {
       method: 'GET',

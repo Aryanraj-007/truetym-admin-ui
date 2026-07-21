@@ -1,3 +1,5 @@
+import { API_BASE_URL } from '@/lib/endpoint';
+
 // API Debugging utilities
 export function logApiCall(method: string, url: string, headers?: HeadersInit): void {
   console.group(`🔗 API Call: ${method} ${url}`);
@@ -28,10 +30,8 @@ export function logApiError(method: string, url: string, error: Error): void {
 }
 
 export function getApiUrl(endpoint: string): string {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_TRUETYM_ADMIN_URL || 'https://hrms-dev-admin-backend.truetym.com';
   // Remove trailing slash from baseUrl and leading slash from endpoint
-  const cleanBase = baseUrl.replace(/\/$/, '');
+  const cleanBase = API_BASE_URL.replace(/\/$/, '');
   const cleanEndpoint = endpoint.replace(/^\//, '');
   return `${cleanBase}/${cleanEndpoint}`;
 }

@@ -1,7 +1,6 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
 
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_TRUETYM_ADMIN_URL || 'https://hrms-dev-admin-backend.truetym.com';
+import { API_BASE_URL } from '@/lib/endpoint';
 
 // ---- Response envelope shared by every /identity endpoint ----
 export interface ApiEnvelope<T = any> {
