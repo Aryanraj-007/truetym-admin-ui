@@ -121,7 +121,7 @@ export default function OrganizationPage() {
     <div className="w-full overflow-hidden bg-gray-50">
       <div className="w-full px-6 py-8">
         <button
-          onClick={() => router.push('/dashboard/customers')}
+          onClick={() => router.push('/organisations')}
           className="mb-6 flex items-center gap-2 rounded px-2 py-1 text-sm text-gray-600 transition-colors hover:text-teal-600 focus:ring-2 focus:ring-teal-500 focus:outline-none"
         >
           <ArrowLeft className="h-4 w-4" />

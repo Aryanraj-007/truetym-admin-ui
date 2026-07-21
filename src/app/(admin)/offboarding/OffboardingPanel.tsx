@@ -213,7 +213,7 @@ export default function OffboardingPanel({ initialId, initialType = 'org' }: Rea
       <header className="space-y-1">
         {cameFromRoute && (
           <button
-            onClick={() => router.push('/dashboard/customers')}
+            onClick={() => router.push('/organisations')}
             className="mb-3 flex items-center gap-2 text-sm text-gray-600 hover:text-teal-600"
           >
             <ArrowLeft className="h-4 w-4" /> Back to Organizations
@@ -439,7 +439,7 @@ export default function OffboardingPanel({ initialId, initialType = 'org' }: Rea
                 Offboard another
               </button>
               <button
-                onClick={() => router.push('/dashboard/customers')}
+                onClick={() => router.push('/dashboard/organ')}
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
               >
                 Back to Organizations
