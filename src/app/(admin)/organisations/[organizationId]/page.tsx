@@ -8,7 +8,7 @@ import { Organization } from '@/types/organisation';
 import { Subscription } from '@/types/subscription';
 import { fetchSubscriptions } from '@/lib/api';
 import { fetchEmployeeList } from '@/lib/employee';
-import OrganizationDetail, { Employee } from '@/components/common/admin-panel/OrganizationDetail';
+import OrganizationDetail, { Employee } from '@/components/admin-panel/OrganizationDetail';
 
 interface OrganizationWithSubscription extends Organization {
   name?: string;

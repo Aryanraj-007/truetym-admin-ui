@@ -11,8 +11,8 @@ import {
 import { isValidPhoneNumber } from '@/utils/valid-phone-number';
 
 import { signUp } from '@/lib/login';
-import CountryCodeSelect from '@/components/common/admin-panel/CountryCodeSelect';
-import SignUpCarousel from '@/components/common/admin-panel/SignUpCarousel';
+import SignUpCarousel from '@/components/admin-panel/SignUpCarousel';
+import CountryCodeSelect from '@/components/common/CountryCodeSelect';
 
 async function detectUserCountryCode(): Promise<string> {
   try {

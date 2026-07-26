@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 
 import { deleteFeature } from '@/lib/api';
-import ConfirmationModal from '@/components/common/admin-panel/ConfirmationModal';
-import FeatureModal from '@/components/common/admin-panel/FeatureModal';
-import { SubFeature } from '@/components/common/admin-panel/SubFeatureModal';
+import FeatureModal from '@/components/admin-panel/FeatureModal';
+import { SubFeature } from '@/components/admin-panel/SubFeatureModal';
+import ConfirmationModal from '@/components/common/ConfirmationModal';
 
 interface Feature {
   id: number;
@@ -27,7 +27,7 @@ export default function FeatureList({
   onSelect,
   onCreate,
   onDelete,
-}: FeatureListProps) {
+}: Readonly<FeatureListProps>) {
   const [showModal, setShowModal] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     featureId: number;
@@ -79,6 +79,7 @@ export default function FeatureList({
       <div className="scrollbar scrollbar-thumb-gray-400 scrollbar-track-gray-100 scrollbar-w-2 flex-1 space-y-3 overflow-y-auto">
         {features.map((feature) => (
           <div
+            role="none"
             key={feature.id}
             className={`relative cursor-pointer rounded border p-3 transition-all hover:bg-gray-100 ${selectedFeatureId === feature.id ? 'border-teal-300 bg-teal-50 shadow' : 'bg-white'} `}
             onClick={() => onSelect(feature)}

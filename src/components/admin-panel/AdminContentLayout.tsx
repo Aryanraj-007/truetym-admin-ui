@@ -1,7 +1,7 @@
 'use client';
 
-import Navbar from '@/components/common/admin-panel/Navbar';
-import Sidebar from '@/components/common/admin-panel/Sidebar';
+import Navbar from '@/components/shared/Navbar';
+import Sidebar from '@/components/shared/Sidebar';
 
 export default function AdminContentLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

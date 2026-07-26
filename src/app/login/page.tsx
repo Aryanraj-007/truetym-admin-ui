@@ -10,10 +10,10 @@ import { isValidPhoneNumber } from '@/utils/valid-phone-number';
 import { useDispatch } from 'react-redux';
 
 import { loginWithPassword, sendOtp, verifyOtp } from '@/lib/login';
-import CountryCodeSelect from '@/components/common/admin-panel/CountryCodeSelect';
-import OTPInput from '@/components/common/admin-panel/OTPInput';
-import PhoneInput from '@/components/common/admin-panel/PhoneInput';
-import SignUpCarousel from '@/components/common/admin-panel/SignUpCarousel';
+import SignUpCarousel from '@/components/admin-panel/SignUpCarousel';
+import CountryCodeSelect from '@/components/common/CountryCodeSelect';
+import OTPInput from '@/components/common/OTPInput';
+import PhoneInput from '@/components/common/PhoneInput';
 
 // ─── geo-detect country code ─────────────────────────────────────────────────
 

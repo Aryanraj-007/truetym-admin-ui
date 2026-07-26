@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 
-import ConfirmationModal from '@/components/common/admin-panel/ConfirmationModal';
-import EditFeatureModal from '@/components/common/admin-panel/EditFeatureModal';
-import SubFeatureModal, { SubFeature } from '@/components/common/admin-panel/SubFeatureModal';
+import EditFeatureModal from '@/components/admin-panel/EditFeatureModal';
+import SubFeatureModal, { SubFeature } from '@/components/admin-panel/SubFeatureModal';
+import ConfirmationModal from '@/components/common/ConfirmationModal';
 
 interface Feature {
   id: number;

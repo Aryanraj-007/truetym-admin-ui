@@ -8,7 +8,7 @@ import { getMenuList } from '@/lib/menu-list';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { CollapseMenuButton } from '@/components/common/admin-panel/CollapseMenuButton';
+import { CollapseMenuButton } from '@/components/common/CollapseMenuButton';
 
 interface MenuProps {
   isOpen: boolean | undefined;

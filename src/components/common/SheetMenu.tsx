@@ -3,7 +3,7 @@ import { MenuIcon, PanelsTopLeft } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Menu } from '@/components/common/admin-panel/Menu';
+import { Menu } from '@/components/common/Menu';
 
 export function SheetMenu() {
   return (

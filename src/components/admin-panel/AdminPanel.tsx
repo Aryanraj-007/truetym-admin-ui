@@ -1,13 +1,13 @@
 'use client';
 
-import Navbar from '@/components/common/admin-panel/Navbar';
-import Sidebar from '@/components/common/admin-panel/Sidebar';
+import Navbar from '@/components/shared/Navbar';
+import Sidebar from '@/components/shared/Sidebar';
 
 interface AdminPanelProps {
   children: React.ReactNode;
 }
 
-export default function AdminPanel({ children }: AdminPanelProps) {
+export default function AdminPanel({ children }: Readonly<AdminPanelProps>) {
   return (
     <div className="flex min-h-screen bg-[#fcfcf9]">
       <Sidebar />

@@ -13,7 +13,7 @@ import {
   deleteSystemPlan,
   getPlanDetails,
 } from '@/lib/api';
-import FeatureMappingModal from '@/components/common/admin-panel/FeatureMappingModal';
+import FeatureMappingModal from '@/components/admin-panel/FeatureMappingModal';
 
 // const availableFeatures = [
 //   'Core HR Solution',

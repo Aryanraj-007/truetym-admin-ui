@@ -2,8 +2,8 @@
 
 import { Bell } from 'lucide-react';
 
-import SearchBar from '@/components/common/admin-panel/SearchBar';
-import UserNav from '@/components/common/admin-panel/UserNav';
+import SearchBar from '@/components/common/SearchBar';
+import UserNav from '@/components/shared/UserNav';
 
 export default function Navbar() {
   return (

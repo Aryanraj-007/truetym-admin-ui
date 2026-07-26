@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 
-import CountryCodeSelect from '@/components/common/admin-panel/CountryCodeSelect';
+import CountryCodeSelect from '@/components/common/CountryCodeSelect';
 
 interface PhoneInputProps {
   phoneNumber: string;

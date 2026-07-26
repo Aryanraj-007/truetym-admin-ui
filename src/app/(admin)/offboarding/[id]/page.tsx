@@ -1,16 +1,11 @@
-'use client';
+import { Suspense } from 'react';
 
-import { useParams, useSearchParams } from 'next/navigation';
+import OffboardingPanel from '@/components/admin-panel/OffboardingPanel';
 
-import { TargetType } from '@/lib/offboarding';
-import OffboardingPanel from '@/app/(admin)/offboarding/OffboardingPanel';
-
-export default function OffboardingByIdPage() {
-  const params = useParams();
-  const searchParams = useSearchParams();
-
-  const id = params.id as string;
-  const type = (searchParams.get('type') as TargetType) || 'org';
-
-  return <OffboardingPanel initialId={id} initialType={type} />;
+export default function OffboardingPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <OffboardingPanel />
+    </Suspense>
+  );
 }
