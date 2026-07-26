@@ -1,4 +1,4 @@
-export type OrgStatus = 'active' | 'trial' | 'expired' | 'inactive';
+export type OrgStatus = 'active' | 'trial' | 'inactive';
 export type SubscriptionMode = 'auto' | 'manual';
 
 export interface OrganizationExtra {

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { selectIsSuperAdmin } from '@/store/slices/authSlice';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CalendarPlus,
@@ -13,10 +14,11 @@ import {
   MinusCircle,
   MoreHorizontal,
   Search,
+  Trash2,
   Users,
-  XCircle,
   Zap,
 } from 'lucide-react';
+import { useSelector } from 'react-redux';
 
 import { Organization } from '@/types/organisation';
 import { fetchOrganizations } from '@/lib/api';
@@ -61,19 +63,16 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-/* ------------------------------------------------------------------ helpers */
-
-const subscriptionOptions = ['Pro', 'Basic', 'Standard', 'Core'];
+const subscriptionOptions = ['Basic', 'Core', 'Pro'];
 
 const STATUS_OPTIONS = [
   { value: 'all', label: 'All Status' },
   { value: 'active', label: 'Active' },
   { value: 'trial', label: 'Trial' },
-  { value: 'expired', label: 'Expired' },
-  { value: 'inactive', label: 'Inactive' },
+  { value: 'inactive', label: 'Expired' },
 ];
 
-type OrgStatus = 'active' | 'trial' | 'expired' | 'inactive';
+type OrgStatus = 'active' | 'trial' | 'inactive';
 
 const fmtDate = (value?: number | null): string => {
   const seconds = Number(value);
@@ -114,15 +113,10 @@ const STATUS_META: Record<
     icon: Clock3,
     className: 'bg-amber-50 text-amber-700 ring-1 ring-amber-600/20',
   },
-  expired: {
-    label: 'Expired',
-    icon: XCircle,
-    className: 'bg-red-50 text-red-700 ring-1 ring-red-600/20',
-  },
   inactive: {
-    label: 'Inactive',
+    label: 'Expired',
     icon: MinusCircle,
-    className: 'bg-gray-100 text-gray-600 ring-1 ring-gray-500/20',
+    className: 'bg-red-50 text-red-600 ring-1 ring-red-500/20',
   },
 };
 
@@ -278,6 +272,9 @@ function ExtendDialog({
 export default function OrganisationPage() {
   const router = useRouter();
   const qc = useQueryClient();
+
+  // ✅ Role guard — delete option only visible to super_admin
+  const isSuperAdmin = useSelector(selectIsSuperAdmin);
 
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -529,6 +526,20 @@ export default function OrganisationPage() {
                             )}
                             Switch to {mode === 'auto' ? 'manual' : 'auto'}
                           </DropdownMenuItem>
+
+                          {/* ✅ Delete — only visible to super_admin */}
+                          {isSuperAdmin && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-red-600 focus:bg-red-50 focus:text-red-700"
+                                onClick={() => router.push(`/offboarding?org_id=${org.id}`)}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete organisation
+                              </DropdownMenuItem>
+                            </>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
