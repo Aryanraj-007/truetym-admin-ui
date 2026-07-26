@@ -1,12 +1,5 @@
+import { getHeaders } from '@/lib/api'; // ← single source of truth for auth headers
 import { API_BASE_URL } from '@/lib/endpoint';
-
-function authHeaders(): HeadersInit {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
 
 export interface ExtendPayload {
   days?: number;
@@ -16,7 +9,7 @@ export interface ExtendPayload {
 async function patchJson<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method: 'PATCH',
-    headers: authHeaders(),
+    headers: getHeaders(),
     body: JSON.stringify(body),
   });
   const json = await res.json();

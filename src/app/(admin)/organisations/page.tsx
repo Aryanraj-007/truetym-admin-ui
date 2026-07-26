@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Clock3,
   CreditCard,
+  Lock,
   MinusCircle,
   MoreHorizontal,
   Search,
@@ -449,6 +450,18 @@ export default function OrganisationPage() {
                 const seats =
                   org.total_licences && org.total_licences > 0 ? org.total_licences : 10;
 
+                // Derive which extend actions are applicable for this org's status:
+                // - "Extend trial"        → only when on trial
+                // - "Extend subscription" → only when active (paid)
+                // - Neither               → expired orgs (no extend actions shown)
+                const isActive = status === 'active';
+                const isTrial = status === 'trial';
+                const isExpired = status === 'inactive';
+
+                // Show the billing mode separator + toggle only when not expired,
+                // since expired orgs have no live billing context.
+                const showModeToggle = !isExpired;
+
                 return (
                   <TableRow key={org.id} className="hover:bg-gray-50/60">
                     <TableCell>
@@ -486,8 +499,10 @@ export default function OrganisationPage() {
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-52">
+                        <DropdownMenuContent align="end" className="w-56">
                           <DropdownMenuLabel>Manage</DropdownMenuLabel>
+
+                          {/* Always available — view employees */}
                           <DropdownMenuItem
                             onClick={() => router.push(`/client-details/employees?id=${org.id}`)}
                           >
@@ -495,39 +510,71 @@ export default function OrganisationPage() {
                             View employees
                           </DropdownMenuItem>
 
+                          {/* ── Extend actions — status-gated ──────────────────── */}
+                          {(isTrial || isActive) && <DropdownMenuSeparator />}
+
+                          {/* Only for trial orgs */}
+                          {isTrial && (
+                            <DropdownMenuItem
+                              onClick={() => setExtendState({ org, kind: 'trial' })}
+                            >
+                              <CalendarPlus className="mr-2 h-4 w-4" />
+                              Extend trial
+                            </DropdownMenuItem>
+                          )}
+
+                          {/* Only for active manual-billing orgs.
+                              Auto orgs are billed via Razorpay subscription — their
+                              renewal date is managed on Razorpay's side and cannot
+                              be overridden here. */}
+                          {isActive && mode === 'manual' && (
+                            <DropdownMenuItem
+                              onClick={() => setExtendState({ org, kind: 'subscription' })}
+                            >
+                              <CalendarPlus className="mr-2 h-4 w-4" />
+                              Extend subscription
+                            </DropdownMenuItem>
+                          )}
+
+                          {/* ── Seat Upgrade — always shown, locked for now ─────── */}
                           <DropdownMenuSeparator />
-
-                          <DropdownMenuItem onClick={() => setExtendState({ org, kind: 'trial' })}>
-                            <CalendarPlus className="mr-2 h-4 w-4" />
-                            Extend trial
-                          </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => setExtendState({ org, kind: 'subscription' })}
+                            disabled
+                            // when the seat management API is ready
+                            className="cursor-not-allowed opacity-60"
+                            title="Seat upgrade coming soon"
                           >
-                            <CalendarPlus className="mr-2 h-4 w-4" />
-                            Extend subscription
+                            <Lock className="mr-2 h-4 w-4" />
+                            Seat upgrade
+                            <span className="ml-auto rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 ring-1 ring-gray-200">
+                              Soon
+                            </span>
                           </DropdownMenuItem>
 
-                          <DropdownMenuSeparator />
+                          {/* ── Billing mode toggle — hide for expired ──────────── */}
+                          {showModeToggle && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                disabled={modeMut.isPending}
+                                onClick={() =>
+                                  modeMut.mutate({
+                                    id: org.id,
+                                    mode: mode === 'auto' ? 'manual' : 'auto',
+                                  })
+                                }
+                              >
+                                {mode === 'auto' ? (
+                                  <CreditCard className="mr-2 h-4 w-4" />
+                                ) : (
+                                  <Zap className="mr-2 h-4 w-4" />
+                                )}
+                                Switch to {mode === 'auto' ? 'manual' : 'auto'}
+                              </DropdownMenuItem>
+                            </>
+                          )}
 
-                          <DropdownMenuItem
-                            disabled={modeMut.isPending}
-                            onClick={() =>
-                              modeMut.mutate({
-                                id: org.id,
-                                mode: mode === 'auto' ? 'manual' : 'auto',
-                              })
-                            }
-                          >
-                            {mode === 'auto' ? (
-                              <CreditCard className="mr-2 h-4 w-4" />
-                            ) : (
-                              <Zap className="mr-2 h-4 w-4" />
-                            )}
-                            Switch to {mode === 'auto' ? 'manual' : 'auto'}
-                          </DropdownMenuItem>
-
-                          {/* ✅ Delete — only visible to super_admin */}
+                          {/* ── Delete — super_admin only ───────────────────────── */}
                           {isSuperAdmin && (
                             <>
                               <DropdownMenuSeparator />
