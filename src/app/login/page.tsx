@@ -4,7 +4,10 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { countryCodeMap } from '@/constants/country';
+import { setAuthUser } from '@/store/slices/authSlice';
+import type { AppDispatch } from '@/store/store';
 import { isValidPhoneNumber } from '@/utils/valid-phone-number';
+import { useDispatch } from 'react-redux';
 
 import { loginWithPassword, sendOtp, verifyOtp } from '@/lib/login';
 import CountryCodeSelect from '@/components/common/admin-panel/CountryCodeSelect';
@@ -12,32 +15,48 @@ import OTPInput from '@/components/common/admin-panel/OTPInput';
 import PhoneInput from '@/components/common/admin-panel/PhoneInput';
 import SignUpCarousel from '@/components/common/admin-panel/SignUpCarousel';
 
+// ─── geo-detect country code ─────────────────────────────────────────────────
+
 async function detectUserCountryCode(): Promise<string> {
   try {
     const response = await fetch('https://ipapi.co/json/', {
       headers: { Accept: 'application/json' },
     });
-
     if (!response.ok) throw new Error('Geolocation API failed');
-
     const data = await response.json();
     const countryCode = data?.country_code?.toUpperCase();
-
-    if (countryCode && countryCodeMap[countryCode]) {
-      return countryCodeMap[countryCode];
-    }
+    if (countryCode && countryCodeMap[countryCode]) return countryCodeMap[countryCode];
   } catch (error) {
     console.error('Error detecting country:', error);
   }
-
   return '+91';
 }
 
-// 'password' is the default login mode; 'otp' is reached via the toggle link.
+// ─── helpers ─────────────────────────────────────────────────────────────────
+
+/**
+ * Pull user profile fields out of whatever shape the backend returns.
+ * Adjust field names if your API returns something different.
+ */
+function extractUserFromResponse(data: any) {
+  const user = data?.data?.user ?? data?.user ?? data?.data ?? {};
+  return {
+    id: String(user.id ?? user._id ?? ''),
+    name: user.name ?? user.full_name ?? user.username ?? 'Admin',
+    email: user.email ?? '',
+    phone: user.phone ?? user.phoneNumber ?? '',
+    role: user.role ?? user.adminRole ?? 'admin',
+    accessToken: data?.data?.accessToken ?? data?.accessToken ?? '',
+  };
+}
+
 type LoginMode = 'password' | 'otp';
+
+// ─── component ───────────────────────────────────────────────────────────────
 
 export default function LoginPage() {
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
 
   const [mode, setMode] = useState<LoginMode>('password');
 
@@ -45,29 +64,22 @@ export default function LoginPage() {
   const [countryCode, setCountryCode] = useState('+91');
   const [rememberMe, setRememberMe] = useState(false);
 
-  // --- Password-mode state ---
+  // Password-mode state
   const [password, setPassword] = useState('');
   const [passwordLoginError, setPasswordLoginError] = useState<string | null>(null);
   const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
 
-  // --- OTP-mode state (unchanged from the original flow) ---
+  // OTP-mode state
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [userId, setUserId] = useState<string | null>(null);
   const [sendOTPError, setSendOTPError] = useState<string | null>(null);
   const [verifyOTPError, setVerifyOTPError] = useState<string | null>(null);
 
   useEffect(() => {
-    const detectLocation = async () => {
-      const detectedCode = await detectUserCountryCode();
-      setCountryCode(detectedCode);
-    };
-
-    detectLocation();
+    detectUserCountryCode().then(setCountryCode);
   }, []);
 
-  // Shared post-login step: set the cookie via the existing route, then
-  // redirect. Used by both the password and OTP paths so behavior stays
-  // identical no matter which one the user logged in with.
+  // Shared post-login step — sets cookie then redirects
   const finishLogin = async (token: string | undefined, redirectUrl?: string) => {
     try {
       await fetch('/api/auth/verify-otp-success', {
@@ -78,11 +90,10 @@ export default function LoginPage() {
     } catch {
       // Continue even if cookie setting fails
     }
-
     router.push(redirectUrl || '/dashboard');
   };
 
-  // ---- Password login ----
+  // ── Password login ──────────────────────────────────────────────────────────
   const handlePasswordLogin = async () => {
     setPasswordLoginError(null);
 
@@ -97,11 +108,11 @@ export default function LoginPage() {
 
     setIsSubmittingPassword(true);
 
-    // loginWithPassword() in lib/login.ts already writes the real
-    // accessToken to localStorage as soon as it comes back.
     const data = await loginWithPassword({ dialCode: countryCode, phoneNumber, password });
 
     if (data?.succeeded === true) {
+      // ✅ Store user info (including role) in Redux + sessionStorage
+      dispatch(setAuthUser(extractUserFromResponse(data)));
       await finishLogin(data?.data?.accessToken, (data as any)?.redirectUrl);
     } else {
       const errorMsg = Array.isArray(data?.message)
@@ -113,7 +124,7 @@ export default function LoginPage() {
     setIsSubmittingPassword(false);
   };
 
-  // ---- OTP login (unchanged logic, just gated behind mode === 'otp') ----
+  // ── OTP login ───────────────────────────────────────────────────────────────
   const handleSendOTP = () => {
     if (phoneNumber.length >= 10) {
       setSendOTPError(null);
@@ -135,7 +146,7 @@ export default function LoginPage() {
             try {
               sessionStorage.setItem('loginUserId', String(extractedUserId));
             } catch {
-              // ignore storage errors
+              /* ignore */
             }
           }
 
@@ -163,6 +174,8 @@ export default function LoginPage() {
     const data = await verifyOtp({ otp, userId: effectiveUserId });
 
     if (data?.succeeded === true) {
+      // ✅ Store user info (including role) in Redux + sessionStorage
+      dispatch(setAuthUser(extractUserFromResponse(data)));
       await finishLogin(data?.data?.accessToken, (data as any)?.redirectUrl);
       return true;
     } else {
@@ -174,12 +187,8 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoBack = () => {
-    setStep('phone');
-  };
+  const handleGoBack = () => setStep('phone');
 
-  // Switching modes clears mode-specific errors so a stale password error
-  // doesn't linger after hopping over to OTP, and vice versa.
   const switchMode = (nextMode: LoginMode) => {
     setMode(nextMode);
     setPasswordLoginError(null);
@@ -188,6 +197,7 @@ export default function LoginPage() {
     setStep('phone');
   };
 
+  // ── render ──────────────────────────────────────────────────────────────────
   return (
     <div className="flex min-h-screen">
       <div className="hidden bg-linear-to-br from-teal-500 to-teal-700 lg:flex lg:w-1/2">

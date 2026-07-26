@@ -1,12 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { selectIsSuperAdmin } from '@/store/slices/authSlice';
 import { ArrowLeft, CheckCircle2, Search, Trash2 } from 'lucide-react';
+import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 
-// Your existing org list API (already returns plan + status):
-import { fetchOrganizations, getStatusLabel } from '@/lib/api';
+import { fetchOrganizations } from '@/lib/api';
 import {
   DeleteStep,
   executeOffboarding,
@@ -18,14 +19,46 @@ import {
   TargetType,
 } from '@/lib/offboarding';
 
-interface Props {
-  initialId?: string;
-  initialType?: TargetType;
+// ─── status helpers (mirrors Organisations page logic exactly) ────────────────
+
+type OrgStatus = 'active' | 'trial' | 'inactive';
+
+/**
+ * Derives a human-readable label and isActive flag from org_status.
+ * 'trial' orgs are NOT considered "active" — they show the amber Trial badge.
+ */
+function resolveOrgStatus(orgStatus: string | undefined): {
+  label: string;
+  isActive: boolean;
+} {
+  const s = (orgStatus ?? 'inactive') as OrgStatus;
+  const labels: Record<OrgStatus, string> = {
+    active: 'Active',
+    trial: 'Trial',
+    inactive: 'Expired',
+  };
+  return {
+    label: labels[s] ?? 'Inactive',
+    isActive: s === 'active', // trial is NOT active
+  };
 }
 
-export default function OffboardingPanel({ initialId, initialType = 'org' }: Readonly<Props>) {
-  const router = useRouter();
+// ─── component ────────────────────────────────────────────────────────────────
 
+export default function OffboardingPanel() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const isSuperAdmin = useSelector(selectIsSuperAdmin);
+
+  // ── derive initial target from query params ──────────────────────────────
+  const orgIdParam = searchParams.get('org_id');
+  const empIdParam = searchParams.get('emp_id');
+
+  const initialId = orgIdParam ?? empIdParam ?? undefined;
+  const initialType: TargetType = orgIdParam ? 'org' : empIdParam ? 'user' : 'org';
+  const cameFromRoute = !!initialId;
+
+  // ── state ────────────────────────────────────────────────────────────────
   const [targetType, setTargetType] = useState<TargetType>(initialType);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<PickItem[]>([]);
@@ -40,17 +73,13 @@ export default function OffboardingPanel({ initialId, initialType = 'org' }: Rea
   const [running, setRunning] = useState(false);
   const [completed, setCompleted] = useState(false);
 
-  const cameFromRoute = !!initialId;
-
   const confirmed = useMemo(
     () => !!preview && confirmName.trim() === preview.displayName.trim(),
     [confirmName, preview],
   );
   const stepTotal = useMemo(() => steps.reduce((s, x) => s + x.deleted, 0), [steps]);
 
-  // ---------------------------------------------------------------------------
-  // load preview for an id
-  // ---------------------------------------------------------------------------
+  // ── load preview ─────────────────────────────────────────────────────────
   const loadPreview = useCallback(async (type: TargetType, id: string) => {
     setLoadingPreview(true);
     setPreview(null);
@@ -69,19 +98,19 @@ export default function OffboardingPanel({ initialId, initialType = 'org' }: Rea
     }
   }, []);
 
-  // open directly from a row icon (/offboarding/[id]?type=)
+  // Auto-load when coming from a query param link
   useEffect(() => {
     if (initialId) {
+      // We don't have the org name yet — the preview call will fill displayName
       setSelected({ id: initialId, name: '', subtitle: '', isActive: false, statusLabel: '' });
       loadPreview(initialType, initialId);
     }
-  }, [initialId, initialType, loadPreview]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialId, initialType]);
 
-  // ---------------------------------------------------------------------------
-  // debounced search
-  // ---------------------------------------------------------------------------
+  // ── debounced search ─────────────────────────────────────────────────────
   useEffect(() => {
-    if (selected) return; // not in picker mode
+    if (selected) return;
     const q = query.trim();
     if (q.length < 2) {
       setResults([]);
@@ -92,21 +121,27 @@ export default function OffboardingPanel({ initialId, initialType = 'org' }: Rea
     const t = setTimeout(async () => {
       try {
         let items: PickItem[] = [];
+
         if (targetType === 'org') {
           const res = await fetchOrganizations(1, 25, q, '', '', 'created_at', 'ASC');
+
           items = (res.data ?? []).map((o: any) => {
-            const label = getStatusLabel(o.status) || 'Inactive';
+            // ✅ Use org_status (same field the Organisations table uses)
+            const { label, isActive } = resolveOrgStatus(o.org_status);
+
             return {
               id: o.id,
               name: o.org_name ?? '-',
+              // subtitle mirrors Organisations page: planTitle · website
               subtitle: [o.planTitle, o.website].filter(Boolean).join(' · ') || '-',
               statusLabel: label,
-              isActive: label === 'Active',
+              isActive,
             } as PickItem;
           });
         } else {
           items = await searchUsers(q);
         }
+
         if (!cancelled) setResults(items);
       } catch (e: any) {
         if (!cancelled) toast.error(e.message ?? 'Search failed');
@@ -120,9 +155,7 @@ export default function OffboardingPanel({ initialId, initialType = 'org' }: Rea
     };
   }, [query, targetType, selected]);
 
-  // ---------------------------------------------------------------------------
-  // actions
-  // ---------------------------------------------------------------------------
+  // ── actions ──────────────────────────────────────────────────────────────
   function pick(item: PickItem) {
     setSelected(item);
     setResults([]);
@@ -147,7 +180,7 @@ export default function OffboardingPanel({ initialId, initialType = 'org' }: Rea
   }
 
   async function deleteAtomic() {
-    if (!preview || !confirmed) return;
+    if (!preview || !confirmed || !isSuperAdmin) return;
     if (
       !window.confirm(
         `PERMANENTLY delete "${preview.displayName}" and ALL linked data? This cannot be undone.`,
@@ -177,7 +210,7 @@ export default function OffboardingPanel({ initialId, initialType = 'org' }: Rea
   }
 
   async function deleteStepByStep() {
-    if (!preview || !confirmed) return;
+    if (!preview || !confirmed || !isSuperAdmin) return;
     if (
       !window.confirm(
         `PERMANENTLY delete "${preview.displayName}" step by step? This cannot be undone.`,
@@ -205,11 +238,9 @@ export default function OffboardingPanel({ initialId, initialType = 'org' }: Rea
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // render
-  // ---------------------------------------------------------------------------
+  // ── render ───────────────────────────────────────────────────────────────
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-8">
+    <div className="mx-auto max-w-7xl space-y-6 p-8">
       <header className="space-y-1">
         {cameFromRoute && (
           <button
@@ -225,7 +256,7 @@ export default function OffboardingPanel({ initialId, initialType = 'org' }: Rea
         </p>
       </header>
 
-      {/* Type toggle (hidden when opened from a specific row) */}
+      {/* Type toggle (hidden when pre-loaded from a query param) */}
       {!cameFromRoute && (
         <div className="inline-flex rounded-lg border border-gray-200 p-1">
           {(['org', 'user'] as TargetType[]).map((t) => (
@@ -242,7 +273,7 @@ export default function OffboardingPanel({ initialId, initialType = 'org' }: Rea
         </div>
       )}
 
-      {/* ---- PICKER (search by name) ---- */}
+      {/* ── PICKER ── */}
       {!selected && (
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="relative">
@@ -275,9 +306,16 @@ export default function OffboardingPanel({ initialId, initialType = 'org' }: Rea
                   <span className="block text-sm font-medium text-gray-900">{r.name}</span>
                   <span className="block text-xs text-gray-500">{r.subtitle}</span>
                 </span>
+                {/* ✅ Status badge uses the same colour scheme as Organisations page */}
                 <span
-                  className={`rounded px-2.5 py-1 text-xs font-semibold text-white ${
-                    r.isActive ? 'bg-green-500' : 'bg-red-500'
+                  className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                    r.statusLabel === 'Active'
+                      ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20'
+                      : r.statusLabel === 'Trial'
+                        ? 'bg-amber-50 text-amber-700 ring-1 ring-amber-600/20'
+                        : r.statusLabel === 'Expired'
+                          ? 'bg-red-50 text-red-700 ring-1 ring-red-600/20'
+                          : 'bg-gray-100 text-gray-600 ring-1 ring-gray-500/20'
                   }`}
                 >
                   {r.statusLabel}
@@ -294,7 +332,7 @@ export default function OffboardingPanel({ initialId, initialType = 'org' }: Rea
         </div>
       )}
 
-      {/* ---- PREVIEW + DANGER ZONE ---- */}
+      {/* ── PREVIEW + DANGER ZONE ── */}
       {preview && !completed && (
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="mb-4 flex flex-wrap items-center gap-x-6 gap-y-1">
@@ -305,11 +343,11 @@ export default function OffboardingPanel({ initialId, initialType = 'org' }: Rea
             {selected?.statusLabel && (
               <div>
                 <span className="text-xs tracking-wide text-gray-400 uppercase">
-                  Subscription / Status
+                  Subscription Status
                 </span>
                 <p className="font-semibold text-gray-900">
                   {selected.subtitle === '-' ? '' : `${selected.subtitle} · `}
-                  <span className={selected.isActive ? 'text-green-600' : 'text-red-600'}>
+                  <span className={selected.isActive ? 'text-green-600' : 'text-amber-600'}>
                     {selected.statusLabel}
                   </span>
                 </p>
@@ -376,14 +414,14 @@ export default function OffboardingPanel({ initialId, initialType = 'org' }: Rea
             <div className="mt-3 flex flex-wrap gap-3">
               <button
                 onClick={deleteAtomic}
-                disabled={!confirmed || running}
+                disabled={!confirmed || running || !isSuperAdmin}
                 className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
               >
                 <Trash2 className="h-4 w-4" /> {running ? 'Deleting…' : 'Delete all (atomic)'}
               </button>
               <button
                 onClick={deleteStepByStep}
-                disabled={!confirmed || running}
+                disabled={!confirmed || running || !isSuperAdmin}
                 className="rounded-lg border border-red-600 px-4 py-2 text-sm font-semibold text-red-700 disabled:opacity-40"
               >
                 Delete step-by-step (live)
@@ -396,11 +434,17 @@ export default function OffboardingPanel({ initialId, initialType = 'org' }: Rea
                 Cancel
               </button>
             </div>
+            {/* Belt-and-suspenders: show a message if somehow a non-super-admin lands here */}
+            {!isSuperAdmin && (
+              <p className="mt-2 text-xs text-red-600">
+                You don&apos;t have permission to delete. Contact a Super Admin.
+              </p>
+            )}
           </div>
         </div>
       )}
 
-      {/* ---- LIVE / COMPLETED RESULT ---- */}
+      {/* ── LIVE / COMPLETED RESULT ── */}
       {steps.length > 0 && (
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
@@ -439,7 +483,7 @@ export default function OffboardingPanel({ initialId, initialType = 'org' }: Rea
                 Offboard another
               </button>
               <button
-                onClick={() => router.push('/dashboard/organ')}
+                onClick={() => router.push('/organisations')}
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
               >
                 Back to Organizations

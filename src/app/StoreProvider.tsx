@@ -1,16 +1,19 @@
 'use client';
 
-import React, { useRef } from 'react';
-import { makeStore } from '@/store/store';
-import type { AppStore } from '@/store/store';
+import { useEffect, useRef } from 'react';
+import { rehydrateAuth } from '@/store/slices/authSlice';
+import { store } from '@/store/store';
 import { Provider } from 'react-redux';
 
 export default function StoreProvider({ children }: Readonly<{ children: React.ReactNode }>) {
-  const storeRef = useRef<AppStore | undefined>(undefined);
-  if (!storeRef.current) {
-    // Create the store instance the first time this renders
-    storeRef.current = makeStore();
-  }
+  const hydrated = useRef(false);
 
-  return <Provider store={storeRef.current}>{children}</Provider>;
+  useEffect(() => {
+    if (!hydrated.current) {
+      store.dispatch(rehydrateAuth());
+      hydrated.current = true;
+    }
+  }, []);
+
+  return <Provider store={store}>{children}</Provider>;
 }
