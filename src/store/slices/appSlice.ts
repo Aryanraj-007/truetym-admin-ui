@@ -1,7 +1,7 @@
 import { fetchPlanDetailsData, fetchSubscriptionsData } from '@/store/thunks/subscriptionThunks';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-import { PlanDetailsResponse, Subscription } from '@/lib/api';
+import { PlanDetailsResponse, Subscription } from '@/types/subscription';
 
 type PlanDetails = PlanDetailsResponse['data'];
 

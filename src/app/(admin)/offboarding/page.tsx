@@ -1,7 +1,11 @@
-'use client';
+import { Suspense } from 'react';
 
-import OffboardingPanel from '@/app/(admin)/offboarding/OffboardingPanel';
+import OffboardingPanel from '@/components/admin-panel/OffboardingPanel';
 
 export default function OffboardingPage() {
-  return <OffboardingPanel />;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <OffboardingPanel />
+    </Suspense>
+  );
 }
