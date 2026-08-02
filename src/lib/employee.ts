@@ -1,3 +1,4 @@
+import { EmployeeListParams, EmployeeListResponse, EmployeesResponse } from '@/types/employee';
 import { getHeaders } from '@/lib/api';
 import { API_BASE_URL } from '@/lib/endpoint';
 
@@ -57,43 +58,54 @@ export function canOffboardEmployee(status: number, deleted?: number): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Types
+// GET /organisation/employees
 // ---------------------------------------------------------------------------
-export interface EmployeeListItem {
-  id: string;
-  user_code: string;
-  employeeTypeId: number;
-  display_name: string;
-  email_id: string;
-  dial_code: string;
-  phone_number: string;
-  profile_image: string;
-  joining_date: string;
-  status: number;
-  is_active: number;
-  deleted: number;
-  job_title: string;
-  role_id: string | null;
-  role_type: number | null;
-  role_name: string | null;
-}
+export async function fetchEmployees(
+  organizationId: string,
+  pageNumber: number = 1,
+  pageSize: number = 10,
+  code: string = '',
+  name: string = '',
+  email: string = '',
+  fieldName: string = '',
+  orderBy: string = 'ASC',
+  status: string = '',
+  p0: any = 0,
+): Promise<EmployeesResponse> {
+  try {
+    const params = new URLSearchParams({
+      code: code,
+      name: name,
+      email: email,
+      fieldName: fieldName,
+      orderBy: orderBy,
+      status: status,
+      pageNumber: pageNumber.toString(),
+      pageSize: pageSize.toString(),
+      delete: p0,
+    });
 
-export interface EmployeeListResponse {
-  succeeded: boolean;
-  message: string[];
-  totalItems: number;
-  data: EmployeeListItem[];
-}
+    const url = `${API_BASE_URL}/organisations/${organizationId}/employees?${params.toString()}`;
+    console.log('Fetching employees from:', url);
 
-export interface EmployeeListParams {
-  pageNumber: number;
-  pageSize: number;
-  name?: string;
-  email?: string;
-  code?: string;
-  status?: number | '';
-  fieldName?: string;
-  orderBy?: string;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: getHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`API returned ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('fetchEmployees error:', errorMessage);
+    throw new Error(`Failed to fetch employees: ${errorMessage}`);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -134,3 +146,76 @@ export async function fetchEmployeeList(
     throw new Error(`Failed to fetch employees: ${errorMessage}`);
   }
 }
+
+async function adminAction(url: string, method: 'PATCH' | 'POST' | 'PUT', body?: unknown) {
+  const response = await fetch(`${API_BASE_URL}${url}`, {
+    method,
+    headers: getHeaders(),
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await response.json();
+  if (!response.ok || !data.succeeded) {
+    throw new Error(data?.message?.join(', ') || `Request failed (${response.status})`);
+  }
+  return data;
+}
+
+export const updateEmployeePhone = (
+  orgId: string,
+  empId: string,
+  dialCode: string,
+  phoneNumber: string,
+) =>
+  adminAction(`/organisations/${orgId}/employees/${empId}/phone-number`, 'PATCH', {
+    dial_code: dialCode,
+    phone_number: phoneNumber,
+  });
+
+export const changeEmployeeCode = (
+  orgId: string,
+  empId: string,
+  userCode: string,
+  codePrefix?: string,
+) =>
+  adminAction(`/organisations/${orgId}/employees/${empId}/code`, 'PATCH', {
+    user_code: userCode,
+    code_prefix: codePrefix,
+  });
+
+export const activateEmployee = (orgId: string, empId: string) =>
+  adminAction(`/organisations/${orgId}/employees/${empId}/activate`, 'PATCH');
+
+export const deactivateEmployee = (orgId: string, empId: string) =>
+  adminAction(`/organisations/${orgId}/employees/${empId}/deactivate`, 'PATCH');
+
+export const offboardEmployeeAdmin = (
+  orgId: string,
+  empId: string,
+  exitDate?: number,
+  reason?: string,
+) =>
+  adminAction(`/organisations/${orgId}/employees/${empId}/offboard`, 'PATCH', { exitDate, reason });
+
+export const createEmployeeContext = (orgId: string, empId: string) =>
+  adminAction(`/organisations/${orgId}/employees/${empId}/context`, 'POST');
+
+export const updateEmployeeRole = (
+  orgId: string,
+  empId: string,
+  roleId: string,
+  roleType: number,
+) => adminAction(`/organisations/${orgId}/employees/${empId}/role`, 'PUT', { roleId, roleType });
+
+export const updateEmployeeBasicDetails = (
+  orgId: string,
+  empId: string,
+  body: {
+    firstName?: string;
+    middleName?: string;
+    lastName?: string;
+    emailId?: string;
+    dob?: number;
+    gender?: number;
+    address?: string;
+  },
+) => adminAction(`/organisations/${orgId}/employees/${empId}/basic-details`, 'PUT', body);

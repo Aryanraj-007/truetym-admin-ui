@@ -1,4 +1,3 @@
-import { EmployeesResponse } from '@/types/employee';
 import { OrganizationListResponse } from '@/types/organisation';
 import {
   CreateCustomPlanRequest,
@@ -53,7 +52,7 @@ export function getHeaders(): HeadersInit {
 // Fetch subscriptions/plans
 export async function fetchSubscriptions(): Promise<SubscriptionsResponse> {
   try {
-    const url = `${API_BASE_URL}/dashborad/subscriptions`;
+    const url = `${API_BASE_URL}/dashboard/subscriptions`;
     console.log('Fetching subscriptions from:', url);
 
     const response = await fetch(url, {
@@ -274,55 +273,6 @@ export function getStatusLabel(status?: number): string {
   }
 
   return [102, 103, 105, 110, 111].includes(status) ? 'Active' : 'Inactive';
-}
-
-// Fetch employees for an organization
-export async function fetchEmployees(
-  organizationId: string,
-  pageNumber: number = 1,
-  pageSize: number = 10,
-  code: string = '',
-  name: string = '',
-  email: string = '',
-  fieldName: string = '',
-  orderBy: string = 'ASC',
-  status: string = '',
-  p0: any = 0,
-): Promise<EmployeesResponse> {
-  try {
-    const params = new URLSearchParams({
-      code: code,
-      name: name,
-      email: email,
-      fieldName: fieldName,
-      orderBy: orderBy,
-      status: status,
-      pageNumber: pageNumber.toString(),
-      pageSize: pageSize.toString(),
-      delete: p0,
-    });
-
-    const url = `${API_BASE_URL}/organisations/${organizationId}/employees?${params.toString()}`;
-    console.log('Fetching employees from:', url);
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: getHeaders(),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('API Error Response:', errorText);
-      throw new Error(`API returned ${response.status}: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    console.error('fetchEmployees error:', errorMessage);
-    throw new Error(`Failed to fetch employees: ${errorMessage}`);
-  }
 }
 
 // Features API Interfaces
