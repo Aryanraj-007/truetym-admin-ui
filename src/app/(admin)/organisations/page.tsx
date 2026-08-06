@@ -30,11 +30,11 @@ import {
 import { useSelector } from 'react-redux';
 
 import { Organization } from '@/types/organisation';
-import { fetchOrganizations } from '@/lib/api';
 import {
   ExtendPayload,
   extendSubscription,
   extendTrial,
+  fetchOrganizations,
   updateSubscriptionMode,
 } from '@/lib/organisation';
 import { Button } from '@/components/ui/button';
@@ -92,6 +92,9 @@ const STATUS_FILTER_OPTIONS = [
   { value: 'inactive', label: 'Inactive' },
 ];
 
+// Max page buttons shown in pagination (excluding prev/next)
+const MAX_PAGE_BUTTONS = 7;
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -117,6 +120,10 @@ interface NextPlan {
 
 interface OrgRow extends Organization {
   org_status: OrgStatus;
+  /**
+   * sub_status is the raw RZP numeric code.
+   * null means no Razorpay subscription exists (manual / trial-only).
+   */
   sub_status: number | null;
   subscription_type?: number;
   is_free_trial: number;
@@ -172,7 +179,7 @@ const periodDates = (org: OrgRow) => {
 function resolveOrgState(org: OrgRow) {
   const orgStatus = (org.org_status ?? 'inactive') as OrgStatus;
 
-  // sub_status is the raw RZP numeric code (field name in API: sub_status)
+  // sub_status is the raw RZP numeric code (null = no RZP sub)
   const rzpStatus: number | null =
     org.sub_status !== null && org.sub_status !== undefined ? Number(org.sub_status) : null;
 
@@ -180,16 +187,36 @@ function resolveOrgState(org: OrgRow) {
   const hasRzp = rzpStatus !== null;
   const hasNextPlan = !!org.nextPlan?.planTitle;
 
+  // ---- Mode-switch guard rules ----
+  //
+  // Switch to MANUAL is only allowed when:
+  //   1. Status is 'trial' AND sub_status is null (pure free trial, no RZP sub), OR
+  //   2. Status is 'expired'
+  //
+  // Switch to AUTO is only allowed when:
+  //   sub_status is null (no Razorpay subscription linked)
+  const canSwitchToManual =
+    (orgStatus === 'trial' && rzpStatus === null) || orgStatus === 'expired';
+
+  const canSwitchToAuto = rzpStatus === null;
+
+  const currentMode = (org.subscription_mode ?? 'auto') as 'auto' | 'manual';
+  const canToggleMode = currentMode === 'auto' ? canSwitchToManual : canSwitchToAuto;
+
   return {
     orgStatus,
     rzpStatus,
     isFreeTrial,
     hasRzp,
     hasNextPlan,
+    currentMode,
+    canToggleMode,
 
     // Action gates
     canExtendTrial: orgStatus === 'trial' || orgStatus === 'authenticated',
-    canExtendSubscription: orgStatus === 'active' || orgStatus === 'pending_cancel',
+    // Allow extend subscription for active, pending_cancel, AND expired
+    canExtendSubscription:
+      orgStatus === 'active' || orgStatus === 'pending_cancel' || orgStatus === 'inactive',
     showRzpBadge: hasRzp,
   };
 }
@@ -292,16 +319,6 @@ function ModeBadge({ mode }: Readonly<{ mode: 'auto' | 'manual' }>) {
   );
 }
 
-// function CycleBadge({ type }: Readonly<{ type: number | null }>) {
-//   if (type === null || type === undefined) return null;
-//   const isMonthly = type === 100;
-//   return (
-//     <span className="ml-1 inline-flex items-center rounded bg-gray-100 px-1 py-0.5 text-[10px] font-medium text-gray-500">
-//       {isMonthly ? 'Monthly' : type === 101 ? 'Yearly' : `Type ${type}`}
-//     </span>
-//   );
-// }
-
 /** Raw RZP status shown as a small secondary badge */
 function RzpBadge({ status }: Readonly<{ status: number }>) {
   const label = RZP_STATUS_LABEL[status] ?? `RZP ${status}`;
@@ -340,12 +357,7 @@ function NextPlanPill({ next }: Readonly<{ next: NextPlan }>) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Extended detail tooltip shown on hover/click for the subscription cell
-// Shows: plan, cycle, amount, next-plan, RZP sub ID
-// ---------------------------------------------------------------------------
 function SubscriptionDetail({ org }: Readonly<{ org: OrgRow }>) {
-  // const state = resolveOrgState(org);
   const cycleLabel =
     org.subscription_type === 100 ? 'Monthly' : org.subscription_type === 101 ? 'Yearly' : null;
 
@@ -432,8 +444,8 @@ function ExtendDialog({
                 key={m}
                 type="button"
                 onClick={() => setMode(m)}
-                className={`rounded px-3 py-1 text-sm ${
-                  mode === m ? 'bg-gray-900 text-white' : 'text-gray-600'
+                className={`rounded px-3 py-1 text-sm transition-colors ${
+                  mode === m ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
                 {m === 'days' ? 'Add days' : 'Pick date'}
@@ -485,6 +497,439 @@ function ExtendDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Pagination — numbered buttons with ellipsis + direct jump
+// ---------------------------------------------------------------------------
+
+interface PaginationProps {
+  pageNumber: number;
+  totalPages: number;
+  pageSize: number;
+  totalItems: number;
+  startItem: number;
+  endItem: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+}
+
+function Pagination({
+  pageNumber,
+  totalPages,
+  pageSize,
+  totalItems,
+  startItem,
+  endItem,
+  onPageChange,
+  onPageSizeChange,
+}: Readonly<PaginationProps>) {
+  /**
+   * Build the array of page numbers / ellipsis markers to render.
+   * Always shows first, last, current ± 2, with '…' gaps between.
+   */
+  const buildPageList = (): (number | '...')[] => {
+    if (totalPages <= MAX_PAGE_BUTTONS) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    const delta = 2; // pages shown either side of current
+    const left = pageNumber - delta;
+    const right = pageNumber + delta;
+
+    const pages: (number | '...')[] = [];
+
+    // always include page 1
+    pages.push(1);
+
+    if (left > 2) pages.push('...');
+
+    for (let i = Math.max(2, left); i <= Math.min(totalPages - 1, right); i++) {
+      pages.push(i);
+    }
+
+    if (right < totalPages - 1) pages.push('...');
+
+    // always include last page
+    pages.push(totalPages);
+
+    return pages;
+  };
+
+  const pageList = buildPageList();
+
+  return (
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-y-2 text-sm text-gray-600">
+      {/* Left: row count info */}
+      <span className="text-xs text-gray-500">
+        Showing{' '}
+        <span className="font-medium text-gray-700">
+          {startItem}–{endItem}
+        </span>{' '}
+        of <span className="font-medium text-gray-700">{totalItems}</span> organizations
+      </span>
+
+      {/* Right: rows-per-page + page buttons */}
+      <div className="flex items-center gap-3">
+        {/* Rows per page */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-gray-500">Rows:</span>
+          <Select value={String(pageSize)} onValueChange={(v) => onPageSizeChange(Number(v))}>
+            <SelectTrigger className="h-8 w-20 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {[25, 50, 100].map((s) => (
+                <SelectItem key={s} value={String(s)}>
+                  {s}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Page buttons */}
+        <nav className="flex items-center gap-1" aria-label="Pagination">
+          {/* Prev */}
+          <button
+            type="button"
+            onClick={() => onPageChange(pageNumber - 1)}
+            disabled={pageNumber === 1}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Previous page"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+
+          {pageList.map((page, idx) =>
+            page === '...' ? (
+              // Ellipsis — not clickable
+              <span
+                // eslint-disable-next-line react/no-array-index-key
+                key={`ellipsis-${idx}`}
+                className="inline-flex h-8 w-8 items-center justify-center text-gray-400 select-none"
+              >
+                …
+              </span>
+            ) : (
+              <button
+                type="button"
+                key={page}
+                onClick={() => onPageChange(page)}
+                aria-current={page === pageNumber ? 'page' : undefined}
+                className={`inline-flex h-8 min-w-8 items-center justify-center rounded-md border px-2 text-sm font-medium transition-colors ${
+                  page === pageNumber
+                    ? 'border-teal-600 bg-teal-600 text-white shadow-sm'
+                    : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                }`}
+              >
+                {page}
+              </button>
+            ),
+          )}
+
+          {/* Next */}
+          <button
+            type="button"
+            onClick={() => onPageChange(pageNumber + 1)}
+            disabled={pageNumber >= totalPages}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Next page"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </nav>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// OrgTableRow — isolated row component
+// ---------------------------------------------------------------------------
+
+interface OrgTableRowProps {
+  org: OrgRow;
+  onExtend: (org: OrgRow, kind: 'trial' | 'subscription') => void;
+  onToggleMode: (org: OrgRow) => void;
+  modePending: boolean;
+  isSuperAdmin: boolean;
+  router: ReturnType<typeof useRouter>;
+}
+
+function OrgTableRow({
+  org,
+  onExtend,
+  onToggleMode,
+  modePending,
+  isSuperAdmin,
+  router,
+}: Readonly<OrgTableRowProps>) {
+  const state = resolveOrgState(org);
+  const { start, end } = periodDates(org);
+  const mode = state.currentMode;
+  const seats = org.total_licences > 0 ? org.total_licences : '—';
+
+  return (
+    <TableRow className="hover:bg-gray-50/50">
+      {/* Organization */}
+      <TableCell>
+        <button
+          type="button"
+          title={org.org_name}
+          onClick={() => router.push(`/client-details/employees?id=${org.id}`)}
+          className="text-left text-sm font-semibold text-gray-900 hover:text-teal-600"
+        >
+          {truncate(org.org_name)}
+        </button>
+        {org.website && (
+          <div className="max-w-44 truncate text-xs text-gray-400">{org.website}</div>
+        )}
+      </TableCell>
+
+      {/* Subscription — plan + cycle + amount + next plan */}
+      <TableCell>
+        <SubscriptionDetail org={org} />
+      </TableCell>
+
+      {/* Billing mode */}
+      <TableCell>
+        <ModeBadge mode={mode} />
+      </TableCell>
+
+      {/* Seats used / licensed */}
+      <TableCell className="text-sm text-gray-700">
+        {org.pricing?.userCount ?? 0}
+        <span className="text-gray-400">/{seats}</span>
+      </TableCell>
+
+      {/* Period start */}
+      <TableCell className="text-sm text-gray-600">{fmtDate(Number(start))}</TableCell>
+
+      {/* Period end */}
+      <TableCell className="text-sm text-gray-600">{fmtDate(Number(end))}</TableCell>
+
+      {/* Status column — primary badge + RZP sub-badge + next-plan pill */}
+      <TableCell>
+        <div className="flex flex-wrap items-center gap-1">
+          <StatusBadge status={state.orgStatus} />
+          {state.showRzpBadge && typeof state.rzpStatus === 'number' && (
+            <RzpBadge status={state.rzpStatus} />
+          )}
+          {state.hasNextPlan && org.nextPlan && <NextPlanPill next={org.nextPlan} />}
+        </div>
+      </TableCell>
+
+      {/* Actions */}
+      <TableCell className="text-right">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>Manage</DropdownMenuLabel>
+
+            <DropdownMenuItem onClick={() => router.push(`/client-details/employees?id=${org.id}`)}>
+              <Users className="mr-2 h-4 w-4" />
+              View employees
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
+            {/* Extend trial — only for trial / authenticated */}
+            {state.canExtendTrial && (
+              <DropdownMenuItem onClick={() => onExtend(org, 'trial')}>
+                <CalendarPlus className="mr-2 h-4 w-4" />
+                Extend trial
+              </DropdownMenuItem>
+            )}
+
+            {/* Extend subscription — active, pending_cancel, OR expired */}
+            {state.canExtendSubscription && (
+              <DropdownMenuItem onClick={() => onExtend(org, 'subscription')}>
+                <CalendarPlus className="mr-2 h-4 w-4" />
+                Extend subscription
+              </DropdownMenuItem>
+            )}
+
+            {/* RZP-status-specific actions */}
+            {typeof state.rzpStatus === 'number' && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs text-gray-400">
+                  Razorpay: {RZP_STATUS_LABEL[state.rzpStatus] ?? state.rzpStatus}
+                </DropdownMenuLabel>
+
+                {/* authenticated — card linked, not yet charged */}
+                {state.rzpStatus === RazorPaySubscriptionStatusEnum.authenticated && (
+                  <DropdownMenuItem
+                    onClick={() => router.push(`/client-details/billing?id=${org.id}`)}
+                  >
+                    <Fingerprint className="mr-2 h-4 w-4" />
+                    Card verified — awaiting charge
+                  </DropdownMenuItem>
+                )}
+
+                {/* pending / failed — payment retry */}
+                {[
+                  RazorPaySubscriptionStatusEnum.pending,
+                  RazorPaySubscriptionStatusEnum.failed,
+                ].includes(state.rzpStatus) && (
+                  <DropdownMenuItem
+                    onClick={() => router.push(`/client-details/billing?id=${org.id}`)}
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Review payment
+                  </DropdownMenuItem>
+                )}
+
+                {/* halted — too many retries */}
+                {state.rzpStatus === RazorPaySubscriptionStatusEnum.halted && (
+                  <DropdownMenuItem
+                    onClick={() => router.push(`/client-details/billing?id=${org.id}`)}
+                  >
+                    <Pause className="mr-2 h-4 w-4" />
+                    Review halted billing
+                  </DropdownMenuItem>
+                )}
+
+                {/* paused */}
+                {state.rzpStatus === RazorPaySubscriptionStatusEnum.paused && (
+                  <DropdownMenuItem
+                    onClick={() => router.push(`/client-details/billing?id=${org.id}`)}
+                  >
+                    <PauseCircle className="mr-2 h-4 w-4" />
+                    View paused subscription
+                  </DropdownMenuItem>
+                )}
+
+                {/* pending_cancel / scheduled — change queued */}
+                {[
+                  RazorPaySubscriptionStatusEnum.pending_cancel,
+                  RazorPaySubscriptionStatusEnum.scheduled,
+                ].includes(state.rzpStatus) && (
+                  <DropdownMenuItem
+                    onClick={() => router.push(`/client-details/billing?id=${org.id}`)}
+                  >
+                    <Clock3 className="mr-2 h-4 w-4" />
+                    View scheduled change
+                  </DropdownMenuItem>
+                )}
+
+                {/* cancelled — no further action */}
+                {state.rzpStatus === RazorPaySubscriptionStatusEnum.cancelled && (
+                  <DropdownMenuItem disabled>
+                    <XCircle className="mr-2 h-4 w-4" />
+                    Subscription cancelled
+                  </DropdownMenuItem>
+                )}
+              </>
+            )}
+
+            <DropdownMenuSeparator />
+
+            {/* Toggle billing mode — only shown when the switch is permitted */}
+            {state.canToggleMode ? (
+              <DropdownMenuItem disabled={modePending} onClick={() => onToggleMode(org)}>
+                {mode === 'auto' ? (
+                  <CreditCard className="mr-2 h-4 w-4" />
+                ) : (
+                  <Zap className="mr-2 h-4 w-4" />
+                )}
+                Switch to {mode === 'auto' ? 'manual' : 'auto'}
+              </DropdownMenuItem>
+            ) : (
+              /* Greyed-out hint explaining why the switch is unavailable */
+              <DropdownMenuItem disabled className="cursor-not-allowed">
+                {mode === 'auto' ? (
+                  <CreditCard className="mr-2 h-4 w-4 opacity-40" />
+                ) : (
+                  <Zap className="mr-2 h-4 w-4 opacity-40" />
+                )}
+                <span className="opacity-50">
+                  Switch to {mode === 'auto' ? 'manual' : 'auto'} (unavailable)
+                </span>
+              </DropdownMenuItem>
+            )}
+
+            {/* Super-admin: delete */}
+            {isSuperAdmin && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-red-600 focus:bg-red-50 focus:text-red-700"
+                  onClick={() => router.push(`/offboarding?org_id=${org.id}`)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete organisation
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </TableCell>
+    </TableRow>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// FilterBar — search + plan + status selects
+// ---------------------------------------------------------------------------
+
+interface FilterBarProps {
+  filters: { name: string; subscriptionPlan: string; trialStatus: string };
+  isFetching: boolean;
+  onFilter: (key: 'name' | 'subscriptionPlan' | 'trialStatus', value: string) => void;
+}
+
+function FilterBar({ filters, isFetching, onFilter }: Readonly<FilterBarProps>) {
+  return (
+    <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div className="relative">
+        <Search className="pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <Input
+          placeholder="Search organization…"
+          value={filters.name}
+          onChange={(e) => onFilter('name', e.target.value)}
+          className="w-64 pl-8"
+        />
+      </div>
+
+      <Select
+        value={filters.subscriptionPlan || 'all'}
+        onValueChange={(v) => onFilter('subscriptionPlan', v === 'all' ? '' : v)}
+      >
+        <SelectTrigger className="w-36">
+          <SelectValue placeholder="All Plans" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Plans</SelectItem>
+          {SUBSCRIPTION_PLANS.map((plan) => (
+            <SelectItem key={plan} value={plan}>
+              {plan}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Select value={filters.trialStatus} onValueChange={(v) => onFilter('trialStatus', v)}>
+        <SelectTrigger className="w-44">
+          <SelectValue placeholder="All Status" />
+        </SelectTrigger>
+        <SelectContent>
+          {STATUS_FILTER_OPTIONS.map((s) => (
+            <SelectItem key={s.value} value={s.value}>
+              {s.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {isFetching && <span className="ml-1 text-xs text-gray-400">Refreshing…</span>}
+    </div>
   );
 }
 
@@ -579,367 +1024,102 @@ export default function OrganisationPage() {
   }
 
   return (
-    <div className="flex min-h-screen max-w-full flex-col overflow-x-hidden p-6 md:p-8">
+    <div className="flex h-screen max-w-full flex-col overflow-hidden p-6 md:p-8">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-6 shrink-0">
         <h1 className="text-2xl font-bold tracking-tight text-gray-900">Organizations</h1>
         <p className="text-sm text-gray-500">Manage subscriptions, trials and billing mode</p>
       </div>
 
       {/* Filters */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="relative">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <Input
-            placeholder="Search organization…"
-            value={filters.name}
-            onChange={(e) => setFilter('name', e.target.value)}
-            className="w-64 pl-8"
-          />
-        </div>
-
-        <Select
-          value={filters.subscriptionPlan || 'all'}
-          onValueChange={(v) => setFilter('subscriptionPlan', v === 'all' ? '' : v)}
-        >
-          <SelectTrigger className="w-36">
-            <SelectValue placeholder="All Plans" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Plans</SelectItem>
-            {SUBSCRIPTION_PLANS.map((plan) => (
-              <SelectItem key={plan} value={plan}>
-                {plan}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={filters.trialStatus} onValueChange={(v) => setFilter('trialStatus', v)}>
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="All Status" />
-          </SelectTrigger>
-          <SelectContent>
-            {STATUS_FILTER_OPTIONS.map((s) => (
-              <SelectItem key={s.value} value={s.value}>
-                {s.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {isFetching && <span className="ml-1 text-xs text-gray-400">Refreshing…</span>}
+      <div className="shrink-0">
+        <FilterBar filters={filters} isFetching={isFetching} onFilter={setFilter} />
       </div>
 
-      {/* Table */}
-      <div className="grow overflow-x-auto rounded-lg border bg-white">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-gray-50/80 hover:bg-gray-50/80">
-              <TableHead className="min-w-45">Organization</TableHead>
-              <TableHead className="min-w-40">Subscription</TableHead>
-              <TableHead>Mode</TableHead>
-              <TableHead>Seats</TableHead>
-              <TableHead className="min-w-25">Start</TableHead>
-              <TableHead className="min-w-25">End</TableHead>
-              <TableHead className="min-w-40">Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={8} className="py-12 text-center text-gray-400">
-                  Loading organizations…
-                </TableCell>
+      {/* Table — scrollable fixed-height container */}
+      <div className="min-h-0 flex-1 overflow-hidden rounded-lg border bg-white shadow-sm">
+        {/* Vertical scroll is on this inner div; the outer keeps the border/shadow */}
+        <div className="h-full overflow-auto">
+          <Table>
+            {/* Sticky header stays visible while scrolling */}
+            <TableHeader className="sticky top-0 z-10">
+              <TableRow className="bg-gray-50/90 backdrop-blur-sm hover:bg-gray-50/90">
+                <TableHead className="min-w-44">Organization</TableHead>
+                <TableHead className="min-w-40">Subscription</TableHead>
+                <TableHead className="min-w-20">Mode</TableHead>
+                <TableHead className="min-w-20">Seats</TableHead>
+                <TableHead className="min-w-24">Start</TableHead>
+                <TableHead className="min-w-24">End</TableHead>
+                <TableHead className="min-w-40">Status</TableHead>
+                <TableHead className="min-w-16 text-right">Actions</TableHead>
               </TableRow>
-            ) : organizations.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="py-12 text-center text-gray-400">
-                  No organizations match the current filters.
-                </TableCell>
-              </TableRow>
-            ) : (
-              organizations.map((org) => {
-                const state = resolveOrgState(org);
-                const { start, end } = periodDates(org);
-                const mode = (org.subscription_mode ?? 'auto') as 'auto' | 'manual';
-                const seats = org.total_licences > 0 ? org.total_licences : '—';
-
-                return (
-                  <TableRow key={org.id} className="hover:bg-gray-50/50">
-                    {/* Organization */}
-                    <TableCell>
-                      <button
-                        title={org.org_name}
-                        onClick={() => router.push(`/client-details/employees?id=${org.id}`)}
-                        className="text-left text-sm font-semibold text-gray-900 hover:text-teal-600"
-                      >
-                        {truncate(org.org_name)}
-                      </button>
-                      {org.website && (
-                        <div className="max-w-45 truncate text-xs text-gray-400">{org.website}</div>
-                      )}
-                    </TableCell>
-
-                    {/* Subscription — plan + cycle + amount + next plan */}
-                    <TableCell>
-                      <SubscriptionDetail org={org} />
-                    </TableCell>
-
-                    {/* Billing mode */}
-                    <TableCell>
-                      <ModeBadge mode={mode} />
-                    </TableCell>
-
-                    {/* Seats used / licensed */}
-                    <TableCell className="text-sm text-gray-700">
-                      {org.pricing?.userCount ?? 0}
-                      <span className="text-gray-400">/{seats}</span>
-                    </TableCell>
-
-                    {/* Period start */}
-                    <TableCell className="text-sm text-gray-600">
-                      {fmtDate(Number(start))}
-                    </TableCell>
-
-                    {/* Period end */}
-                    <TableCell className="text-sm text-gray-600">{fmtDate(Number(end))}</TableCell>
-
-                    {/* Status column — primary badge + RZP sub-badge + next-plan pill */}
-                    <TableCell>
-                      <div className="flex flex-wrap items-center gap-1">
-                        <StatusBadge status={state.orgStatus} />
-                        {state.showRzpBadge && typeof state.rzpStatus === 'number' && (
-                          <RzpBadge status={state.rzpStatus} />
-                        )}
-                        {state.hasNextPlan && org.nextPlan && <NextPlanPill next={org.nextPlan} />}
-                      </div>
-                    </TableCell>
-
-                    {/* Actions */}
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56">
-                          <DropdownMenuLabel>Manage</DropdownMenuLabel>
-
-                          <DropdownMenuItem
-                            onClick={() => router.push(`/client-details/employees?id=${org.id}`)}
-                          >
-                            <Users className="mr-2 h-4 w-4" />
-                            View employees
-                          </DropdownMenuItem>
-
-                          <DropdownMenuSeparator />
-
-                          {/* Extend trial */}
-                          {state.canExtendTrial && (
-                            <DropdownMenuItem
-                              onClick={() => setExtendState({ org, kind: 'trial' })}
-                            >
-                              <CalendarPlus className="mr-2 h-4 w-4" />
-                              Extend trial
-                            </DropdownMenuItem>
-                          )}
-
-                          {/* Extend paid subscription */}
-                          {state.canExtendSubscription && (
-                            <DropdownMenuItem
-                              onClick={() => setExtendState({ org, kind: 'subscription' })}
-                            >
-                              <CalendarPlus className="mr-2 h-4 w-4" />
-                              Extend subscription
-                            </DropdownMenuItem>
-                          )}
-
-                          {/* RZP-status-specific actions */}
-                          {typeof state.rzpStatus === 'number' && (
-                            <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuLabel className="text-xs text-gray-400">
-                                Razorpay: {RZP_STATUS_LABEL[state.rzpStatus] ?? state.rzpStatus}
-                              </DropdownMenuLabel>
-
-                              {/* authenticated — card linked, not yet charged */}
-                              {state.rzpStatus === RazorPaySubscriptionStatusEnum.authenticated && (
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    router.push(`/client-details/billing?id=${org.id}`)
-                                  }
-                                >
-                                  <Fingerprint className="mr-2 h-4 w-4" />
-                                  Card verified — awaiting charge
-                                </DropdownMenuItem>
-                              )}
-
-                              {/* pending / failed — payment retry */}
-                              {[
-                                RazorPaySubscriptionStatusEnum.pending,
-                                RazorPaySubscriptionStatusEnum.failed,
-                              ].includes(state.rzpStatus) && (
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    router.push(`/client-details/billing?id=${org.id}`)
-                                  }
-                                >
-                                  <RefreshCw className="mr-2 h-4 w-4" />
-                                  Review payment
-                                </DropdownMenuItem>
-                              )}
-
-                              {/* halted — too many retries */}
-                              {state.rzpStatus === RazorPaySubscriptionStatusEnum.halted && (
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    router.push(`/client-details/billing?id=${org.id}`)
-                                  }
-                                >
-                                  <Pause className="mr-2 h-4 w-4" />
-                                  Review halted billing
-                                </DropdownMenuItem>
-                              )}
-
-                              {/* paused */}
-                              {state.rzpStatus === RazorPaySubscriptionStatusEnum.paused && (
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    router.push(`/client-details/billing?id=${org.id}`)
-                                  }
-                                >
-                                  <PauseCircle className="mr-2 h-4 w-4" />
-                                  View paused subscription
-                                </DropdownMenuItem>
-                              )}
-
-                              {/* pending_cancel / scheduled — change queued */}
-                              {[
-                                RazorPaySubscriptionStatusEnum.pending_cancel,
-                                RazorPaySubscriptionStatusEnum.scheduled,
-                              ].includes(state.rzpStatus) && (
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    router.push(`/client-details/billing?id=${org.id}`)
-                                  }
-                                >
-                                  <Clock3 className="mr-2 h-4 w-4" />
-                                  View scheduled change
-                                </DropdownMenuItem>
-                              )}
-
-                              {/* cancelled — no further action */}
-                              {state.rzpStatus === RazorPaySubscriptionStatusEnum.cancelled && (
-                                <DropdownMenuItem disabled>
-                                  <XCircle className="mr-2 h-4 w-4" />
-                                  Subscription cancelled
-                                </DropdownMenuItem>
-                              )}
-                            </>
-                          )}
-
-                          <DropdownMenuSeparator />
-
-                          {/* Toggle billing mode */}
-                          <DropdownMenuItem
-                            disabled={modeMut.isPending}
-                            onClick={() =>
-                              modeMut.mutate({
-                                id: org.id,
-                                mode: mode === 'auto' ? 'manual' : 'auto',
-                              })
-                            }
-                          >
-                            {mode === 'auto' ? (
-                              <CreditCard className="mr-2 h-4 w-4" />
-                            ) : (
-                              <Zap className="mr-2 h-4 w-4" />
-                            )}
-                            Switch to {mode === 'auto' ? 'manual' : 'auto'}
-                          </DropdownMenuItem>
-
-                          {/* Super-admin: delete */}
-                          {isSuperAdmin && (
-                            <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-red-600 focus:bg-red-50 focus:text-red-700"
-                                onClick={() => router.push(`/offboarding?org_id=${org.id}`)}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete organisation
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="py-16 text-center text-gray-400">
+                    <div className="flex flex-col items-center gap-2">
+                      <RefreshCw className="h-5 w-5 animate-spin text-gray-300" />
+                      <span className="text-sm">Loading organizations…</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : organizations.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="py-16 text-center">
+                    <div className="flex flex-col items-center gap-2 text-gray-400">
+                      <Search className="h-5 w-5 text-gray-300" />
+                      <span className="text-sm font-medium text-gray-500">
+                        No organizations match the current filters
+                      </span>
+                      <span className="text-xs">Try adjusting your search or status filter</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                organizations.map((org) => (
+                  <OrgTableRow
+                    key={org.id}
+                    org={org}
+                    onExtend={(o, kind) => setExtendState({ org: o, kind })}
+                    onToggleMode={(o) => {
+                      const st = resolveOrgState(o);
+                      modeMut.mutate({
+                        id: o.id,
+                        mode: st.currentMode === 'auto' ? 'manual' : 'auto',
+                      });
+                    }}
+                    modePending={modeMut.isPending}
+                    isSuperAdmin={isSuperAdmin}
+                    router={router}
+                  />
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {/* Pagination */}
       {totalItems > 0 && (
-        <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
-          <span>
-            Showing {startItem}–{endItem} of {totalItems}
-          </span>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span>Rows:</span>
-              <Select
-                value={String(pageSize)}
-                onValueChange={(v) => {
-                  setPageSize(Number(v));
-                  setPageNumber(1);
-                }}
-              >
-                <SelectTrigger className="h-8 w-20">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[25, 50, 100].map((s) => (
-                    <SelectItem key={s} value={String(s)}>
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                disabled={pageNumber === 1}
-                onClick={() => setPageNumber((p) => p - 1)}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="px-2">
-                {pageNumber} / {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                disabled={pageNumber >= totalPages}
-                onClick={() => setPageNumber((p) => p + 1)}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+        <div className="shrink-0">
+          <Pagination
+            pageNumber={pageNumber}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalItems={totalItems}
+            startItem={startItem}
+            endItem={endItem}
+            onPageChange={setPageNumber}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setPageNumber(1);
+            }}
+          />
         </div>
       )}
 
+      {/* Extend dialog */}
       <ExtendDialog
         state={extendState}
         submitting={extendMut.isPending}

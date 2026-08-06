@@ -1,4 +1,3 @@
-import { OrganizationListResponse } from '@/types/organisation';
 import {
   CreateCustomPlanRequest,
   CreateCustomPlanResponse,
@@ -178,49 +177,6 @@ export async function deleteSystemPlan(planId: string): Promise<CreateCustomPlan
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     console.error('deleteSystemPlan error:', errorMessage);
     throw new Error(`Failed to delete system plan: ${errorMessage}`);
-  }
-}
-
-// Fetch organizations list
-export async function fetchOrganizations(
-  pageNumber: number = 1,
-  pageSize: number = 10,
-  name: string = '',
-  subscriptionPlan: string = '',
-  trialStatus: string = '',
-  fieldName: string = 'created_at',
-  orderBy: string = 'ASC',
-): Promise<OrganizationListResponse> {
-  try {
-    const params = new URLSearchParams({
-      pageNumber: pageNumber.toString(),
-      pageSize: pageSize.toString(),
-      name: name,
-      subscriptionPlan: subscriptionPlan,
-      trialStatus: trialStatus,
-      fieldName: fieldName,
-      orderBy: orderBy,
-    });
-
-    const url = `${API_BASE_URL}/organisations?${params.toString()}`;
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: getHeaders(),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('API Error Response:', errorText);
-      throw new Error(`API returned ${response.status}: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    console.error('fetchOrganizations error:', errorMessage);
-    throw new Error(`Failed to fetch organizations: ${errorMessage}`);
   }
 }
 

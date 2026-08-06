@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  BadgePercent,
   FileText,
   Headphones,
   LayoutDashboard,
@@ -20,7 +21,8 @@ const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
   { icon: Users, label: 'Organisation', href: '/organisations' },
   { icon: Sliders, label: 'Feature Management', href: '/features' },
-  { icon: Package, label: 'Plan Management', href: '/dashboard/plan' }, // lowercase
+  { icon: Package, label: 'Plan Management', href: '/dashboard/plan' },
+  { icon: BadgePercent, label: 'Discounts', href: '/discounts' },
   { icon: TrendingDown, label: 'Offboarding', href: '/offboarding' },
   { icon: Megaphone, label: 'Marketing', href: '/dashboard/marketing' },
   { icon: FileText, label: 'Financials', href: '/dashboard/financials' },
