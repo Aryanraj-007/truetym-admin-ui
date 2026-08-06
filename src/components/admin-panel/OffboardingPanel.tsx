@@ -7,7 +7,6 @@ import { ArrowLeft, CheckCircle2, Search, Trash2 } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 
-import { fetchOrganizations } from '@/lib/api';
 import {
   DeleteStep,
   executeOffboarding,
@@ -18,6 +17,7 @@ import {
   streamOffboarding,
   TargetType,
 } from '@/lib/offboarding';
+import { fetchOrganizations } from '@/lib/organisation';
 
 // ─── status helpers (mirrors Organisations page logic exactly) ────────────────
 
@@ -310,6 +310,7 @@ export default function OffboardingPanel() {
             )}
             {results.map((r) => (
               <button
+                type="button"
                 key={r.id}
                 onClick={() => pick(r)}
                 className="flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-gray-50"
