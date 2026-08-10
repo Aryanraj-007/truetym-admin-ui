@@ -1,5 +1,3 @@
-import { EmployeesResponse } from '@/types/employee';
-import { OrganizationListResponse } from '@/types/organisation';
 import {
   CreateCustomPlanRequest,
   CreateCustomPlanResponse,
@@ -53,7 +51,7 @@ export function getHeaders(): HeadersInit {
 // Fetch subscriptions/plans
 export async function fetchSubscriptions(): Promise<SubscriptionsResponse> {
   try {
-    const url = `${API_BASE_URL}/dashborad/subscriptions`;
+    const url = `${API_BASE_URL}/dashboard/subscriptions`;
     console.log('Fetching subscriptions from:', url);
 
     const response = await fetch(url, {
@@ -182,49 +180,6 @@ export async function deleteSystemPlan(planId: string): Promise<CreateCustomPlan
   }
 }
 
-// Fetch organizations list
-export async function fetchOrganizations(
-  pageNumber: number = 1,
-  pageSize: number = 10,
-  name: string = '',
-  subscriptionPlan: string = '',
-  trialStatus: string = '',
-  fieldName: string = 'created_at',
-  orderBy: string = 'ASC',
-): Promise<OrganizationListResponse> {
-  try {
-    const params = new URLSearchParams({
-      pageNumber: pageNumber.toString(),
-      pageSize: pageSize.toString(),
-      name: name,
-      subscriptionPlan: subscriptionPlan,
-      trialStatus: trialStatus,
-      fieldName: fieldName,
-      orderBy: orderBy,
-    });
-
-    const url = `${API_BASE_URL}/organisations?${params.toString()}`;
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: getHeaders(),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('API Error Response:', errorText);
-      throw new Error(`API returned ${response.status}: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    console.error('fetchOrganizations error:', errorMessage);
-    throw new Error(`Failed to fetch organizations: ${errorMessage}`);
-  }
-}
-
 export async function fetchPlanDetails(planId: string): Promise<PlanDetailsResponse> {
   try {
     const url = `${API_BASE_URL}/master-data/plans/${planId}`;
@@ -250,53 +205,30 @@ export async function fetchPlanDetails(planId: string): Promise<PlanDetailsRespo
   }
 }
 
-// Fetch employees for an organization
-export async function fetchEmployees(
-  organizationId: string,
-  pageNumber: number = 1,
-  pageSize: number = 10,
-  code: string = '',
-  name: string = '',
-  email: string = '',
-  fieldName: string = '',
-  orderBy: string = 'ASC',
-  status: string = '',
-  p0: any = 0,
-): Promise<EmployeesResponse> {
-  try {
-    const params = new URLSearchParams({
-      code: code,
-      name: name,
-      email: email,
-      fieldName: fieldName,
-      orderBy: orderBy,
-      status: status,
-      pageNumber: pageNumber.toString(),
-      pageSize: pageSize.toString(),
-      delete: p0,
-    });
+// Utility function to format timestamp to readable date
+export function formatDate(timestamp: string | number): string {
+  const ts = typeof timestamp === 'string' ? parseInt(timestamp, 10) : timestamp;
 
-    const url = `${API_BASE_URL}/organisations/${organizationId}/employees?${params.toString()}`;
-    console.log('Fetching employees from:', url);
+  // Check if timestamp is in milliseconds (13 digits) or seconds (10 digits)
+  const date = new Date(ts * (ts.toString().length === 10 ? 1000 : 1));
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: getHeaders(),
-    });
+  return date.toLocaleDateString('en-US', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+}
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('API Error Response:', errorText);
-      throw new Error(`API returned ${response.status}: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    console.error('fetchEmployees error:', errorMessage);
-    throw new Error(`Failed to fetch employees: ${errorMessage}`);
+// Utility function to get status label from status code
+export function getStatusLabel(status?: number): string {
+  if (status === undefined || status === null) {
+    return 'Inactive';
   }
+
+  return [102, 103, 105, 110, 111].includes(status) ? 'Active' : 'Inactive';
 }
 
 // Features API Interfaces

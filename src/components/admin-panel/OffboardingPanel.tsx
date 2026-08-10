@@ -7,7 +7,6 @@ import { ArrowLeft, CheckCircle2, Search, Trash2 } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 
-import { fetchOrganizations } from '@/lib/api';
 import {
   DeleteStep,
   executeOffboarding,
@@ -18,6 +17,7 @@ import {
   streamOffboarding,
   TargetType,
 } from '@/lib/offboarding';
+import { fetchOrganizations } from '@/lib/organisation';
 
 // ─── status helpers (mirrors Organisations page logic exactly) ────────────────
 
@@ -52,10 +52,13 @@ export default function OffboardingPanel() {
 
   // ── derive initial target from query params ──────────────────────────────
   const orgIdParam = searchParams.get('org_id');
-  const empIdParam = searchParams.get('emp_id');
-
-  const initialId = orgIdParam ?? empIdParam ?? undefined;
-  const initialType: TargetType = orgIdParam ? 'org' : empIdParam ? 'user' : 'org';
+  const empIdParam =
+    searchParams.get('emp_id') ??
+    searchParams.get('emp') ??
+    searchParams.get('user_id') ??
+    searchParams.get('userId');
+  const initialId = empIdParam ?? orgIdParam ?? undefined;
+  const initialType: TargetType = empIdParam ? 'user' : orgIdParam ? 'org' : 'org';
   const cameFromRoute = !!initialId;
 
   // ── state ────────────────────────────────────────────────────────────────
@@ -101,7 +104,9 @@ export default function OffboardingPanel() {
   // Auto-load when coming from a query param link
   useEffect(() => {
     if (initialId) {
-      // We don't have the org name yet — the preview call will fill displayName
+      // Keep the toggle/type in sync with what the URL asked for (user vs org),
+      // then load the preview which fills displayName.
+      setTargetType(initialType);
       setSelected({ id: initialId, name: '', subtitle: '', isActive: false, statusLabel: '' });
       loadPreview(initialType, initialId);
     }
@@ -238,16 +243,23 @@ export default function OffboardingPanel() {
     }
   }
 
+  // Back-nav target depends on where the deep-link originated.
+  const backToLabel = initialType === 'user' ? 'Back to Employees' : 'Back to Organizations';
+  const goBackToOrigin = () => {
+    if (initialType === 'user') router.back();
+    else router.push('/organisations');
+  };
+
   // ── render ───────────────────────────────────────────────────────────────
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-8">
       <header className="space-y-1">
         {cameFromRoute && (
           <button
-            onClick={() => router.push('/organisations')}
+            onClick={goBackToOrigin}
             className="mb-3 flex items-center gap-2 text-sm text-gray-600 hover:text-teal-600"
           >
-            <ArrowLeft className="h-4 w-4" /> Back to Organizations
+            <ArrowLeft className="h-4 w-4" /> {backToLabel}
           </button>
         )}
         <h1 className="text-3xl font-bold text-gray-900">Offboarding</h1>
@@ -298,6 +310,7 @@ export default function OffboardingPanel() {
             )}
             {results.map((r) => (
               <button
+                type="button"
                 key={r.id}
                 onClick={() => pick(r)}
                 className="flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-gray-50"
@@ -483,10 +496,10 @@ export default function OffboardingPanel() {
                 Offboard another
               </button>
               <button
-                onClick={() => router.push('/organisations')}
+                onClick={goBackToOrigin}
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
               >
-                Back to Organizations
+                {backToLabel}
               </button>
             </div>
           )}
