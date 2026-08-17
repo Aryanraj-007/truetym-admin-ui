@@ -1,12 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 
-import {
-  fetchPlanDetails,
-  fetchSubscriptions,
-  PlanDetailsResponse,
-  Subscription,
-  SubscriptionsResponse,
-} from '@/lib/api';
+import { PlanDetailsResponse, Subscription, SubscriptionsResponse } from '@/types/subscription';
+import { fetchPlanDetails, fetchSubscriptions } from '@/lib/api';
 
 // Create an async thunk for fetching subscriptions
 export const fetchSubscriptionsData = createAsyncThunk<

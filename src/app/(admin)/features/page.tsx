@@ -9,9 +9,9 @@ import {
   fetchFeatures,
   updateSubFeature,
 } from '@/lib/api';
-import FeatureDetail from '@/components/common/admin-panel/FeatureDetail';
-import FeatureList from '@/components/common/admin-panel/FeatureList';
-import { SubFeature } from '@/components/common/admin-panel/SubFeatureModal';
+import FeatureDetail from '@/components/admin-panel/FeatureDetail';
+import FeatureList from '@/components/admin-panel/FeatureList';
+import { SubFeature } from '@/components/admin-panel/SubFeatureModal';
 
 interface Feature {
   id: number;

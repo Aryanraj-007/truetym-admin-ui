@@ -1,4 +1,5 @@
-import { API_BASE_URL, getHeaders } from '@/lib/api';
+import { getHeaders } from '@/lib/api';
+import { API_BASE_URL } from '@/lib/endpoint';
 
 async function extractError(response: Response): Promise<string> {
   const errorText = await response.text();
